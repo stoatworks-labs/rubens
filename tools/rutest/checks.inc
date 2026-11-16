@@ -844,7 +844,8 @@ int runSpacing( const Perturb& perturb )
 }
 
 //===========================================================================
-// --fps (GL): the same audio at four frame rates, the flames at t = 1 s.
+// --rates (GL): the same audio at 24, 30, 60 and 240 fps, the flames at t = 1 s;
+// and what Volume means (the piston velocity of a full-scale sample).
 //===========================================================================
 int runRates( const Perturb& perturb )
 {
@@ -1156,7 +1157,9 @@ int runDevice( const Perturb& perturb )
 }
 
 //===========================================================================
-// --alpha (GL): the Over's alpha, decided: A = 1 - (1 - a_clip)(1 - a_flame)(1 - a_tube).
+// --alpha (GL): the Over's alpha, decided: A = 1 - (1 - a_clip)(1 - a_flame)(1 - a_tube),
+// a_flame the flames' largest encoded channel, then lifted to the largest
+// encoded channel so the output is a valid premultiplied colour.
 //===========================================================================
 int runAlpha( const Perturb& perturb )
 {

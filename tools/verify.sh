@@ -95,6 +95,12 @@ echo "ok   earshot snapshot 8124191, unpatched"
 #---------------------------------------------------------------------------
 step "Build (universal)"
 #---------------------------------------------------------------------------
+# Fresh unless KEEP_BUILD=1: an incremental build recompiles only what changed,
+# so the warning check below would see nothing from the files it skipped.
+if [[ "${KEEP_BUILD:-0}" != 1 ]]; then
+	[[ -n "$BUILD" && "$BUILD" != "$REPO" && "$BUILD" != "/" ]] || fail "refusing to clear build directory '$BUILD'"
+	rm -rf "$BUILD"
+fi
 log="$( mktemp )"
 cmake -B "$BUILD" -DCMAKE_BUILD_TYPE=Release >"$log" 2>&1 || { cat "$log"; fail "configure"; }
 cmake --build "$BUILD" -j8 >"$log" 2>&1 || { tail -40 "$log"; fail "build"; }
@@ -171,7 +177,7 @@ for check in $CHECKS; do
 done
 
 #---------------------------------------------------------------------------
-step "Software renderer (CI's, at 320x180)"
+step "Software renderer (Apple's, at 320x180)"
 #---------------------------------------------------------------------------
 # The picture checks on Apple's software renderer, which is what a GPU-less CI
 # runner falls back to: the GL state, the Over's alpha (Mix 0 bit for bit,
@@ -191,7 +197,7 @@ for check in $SOFTWARE; do
 done
 
 #---------------------------------------------------------------------------
-step "Offline (what CI runs)"
+step "Offline (no GL context)"
 #---------------------------------------------------------------------------
 "$RUTEST" --offline >/dev/null || fail "rutest --offline"
 echo "ok   rutest --offline"
@@ -261,7 +267,9 @@ fi
 #---------------------------------------------------------------------------
 step "Mutants"
 #---------------------------------------------------------------------------
-tools/mutate.sh | grep -E '^== mutant|^   (ok|FAIL)|^mutants' || fail "a mutant survived"
+# The indented lines are the check's own FAIL lines: they show a mutant was
+# caught by the check failing, not by a shader that no longer compiles.
+tools/mutate.sh | grep -E '^== mutant|^   (ok|FAIL)|^        |^mutants' || fail "a mutant survived"
 
 #---------------------------------------------------------------------------
 step "Dead controls"
