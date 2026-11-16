@@ -276,6 +276,13 @@ vec3 flames( vec2 m )
 	return E;
 }
 
+//The pilot lamp's centre, metres: in the housing, or slid in from the
+//frame's left edge when the housing is off it (rutest --device reads it here).
+vec2 LampAt( float lr )
+{
+	return vec2( max( -0.5 * TubeLength - 0.08, -0.5 * Field + 2.0 * lr ), TubeY + 0.035 );
+}
+
 //The tube, the speaker housing and the cap: colour (linear) and coverage.
 vec4 tube( vec2 m, float px, vec3 glow )
 {
@@ -299,15 +306,10 @@ vec4 tube( vec2 m, float px, vec3 glow )
 	float capCov = clamp( ( TubeRadius + 0.006 - abs( dy ) ) / px + 0.5, 0.0, 1.0 ) * clamp( ( 0.004 - abs( m.x - halfL - 0.004 ) ) / px + 0.5, 0.0, 1.0 );
 	if( capCov > 0.0 )
 		col = mix( col, vec4( vec3( 0.18, 0.19, 0.2 ) * ( 0.5 + 0.5 * clamp( dy / TubeRadius, -1.0, 1.0 ) ), 1.0 ), capCov );
-	//The speaker housing at the piston end, and its pilot lamp.
+	//The speaker housing at the piston end.
 	float boxCov = clamp( ( 0.065 - abs( dy ) ) / px + 0.5, 0.0, 1.0 ) * clamp( ( 0.08 - abs( m.x + halfL + 0.08 ) ) / px + 0.5, 0.0, 1.0 );
 	if( boxCov > 0.0 )
-	{
-		vec3 c = vec3( 0.025, 0.025, 0.028 ) * ( 0.7 + 0.3 * clamp( dy / 0.065, -1.0, 1.0 ) );
-		float lamp = length( m - vec2( -halfL - 0.08, TubeY + 0.035 ) );
-		c = mix( c, Lamp, 1.0 - smoothstep( 0.006 - px, 0.006 + px, lamp ) );
-		col = mix( col, vec4( c, 1.0 ), boxCov );
-	}
+		col = mix( col, vec4( vec3( 0.025, 0.025, 0.028 ) * ( 0.7 + 0.3 * clamp( dy / 0.065, -1.0, 1.0 ) ), 1.0 ), boxCov );
 	return col;
 }
 
@@ -380,9 +382,31 @@ void main()
 	}
 	vec3 f = tone( E );
 	col    = vec3( 1.0 ) - ( vec3( 1.0 ) - col ) * ( vec3( 1.0 ) - f );
-	alpha  = 1.0 - ( 1.0 - alpha ) * ( 1.0 - max( f.r, max( f.g, f.b ) ) );
+	//The flames' coverage is their light as the host will see it, coded.
+	vec3 fc = toCode( f );
+	alpha   = 1.0 - ( 1.0 - alpha ) * ( 1.0 - max( fc.r, max( fc.g, fc.b ) ) );
 
-	vec4 result = vec4( toCode( col ), IsOver != 0 ? alpha : 1.0 );
+	//The housing's pilot lamp, over everything: never smaller than three
+	//pixels, and never off the frame. A narrow field slides it in from the
+	//left edge, in a dark bezel.
+	if( !hooked( kHookFlamesOnly ) && !hooked( kHookNoTube ) )
+	{
+		float lr   = max( 0.006, 3.0 * px );
+		float lamp = length( m - LampAt( lr ) );
+		float bez  = 1.0 - smoothstep( 1.6 * lr - px, 1.6 * lr + px, lamp );
+		if( bez > 0.0 )
+		{
+			col   = mix( col, vec3( 0.02 ), bez );
+			col   = mix( col, Lamp, 1.0 - smoothstep( lr - px, lr + px, lamp ) );
+			alpha = max( alpha, bez );
+		}
+	}
+
+	//Premultiplied: no channel above its alpha. Coding is not linear, so the
+	//screen in linear light can leave one a little above; lift the alpha.
+	vec3 code = toCode( col );
+	alpha     = max( alpha, max( code.r, max( code.g, code.b ) ) );
+	vec4 result = vec4( code, IsOver != 0 ? alpha : 1.0 );
 	if( IsOver != 0 )
 	{
 		result = mix( clip, result, MixAmount );

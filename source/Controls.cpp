@@ -69,18 +69,18 @@ const ControlInfo kTable[] = {
 	event( PT_RESCAN, "Rescan Inputs", "Audio" ),
 	option( PT_CHANNEL, "Channel", "Audio", 0.0f, kChannelNames, static_cast< int >( Channel::Count ) ),
 	option( PT_FFT_LAW, "FFT Law", "Audio", 0.0f, kLawNames, static_cast< int >( FftLaw::Count ) ),
-	standard( PT_VOLUME, "Volume", "Audio", ParamFromVolume( 128.0 ) ),
+	standard( PT_VOLUME, "Volume", "Audio", ParamFromVolume( 145.0 ) ),
 
 	standard( PT_LENGTH, "Length", "Tube", ParamFromLength( 1.524 ) ),
 	standard( PT_PITCH, "Hole Pitch", "Tube", ParamFromPitch( 0.022 ) ),
 	standard( PT_HOLE_SIZE, "Hole Size", "Tube", ParamFromHoleSize( 0.92e-3 ) ),
-	standard( PT_GAS, "Gas", "Tube", ParamFromGas( 30.0 ) ),
+	standard( PT_GAS, "Gas", "Tube", ParamFromGas( 3.0 ) ),
 
-	standard( PT_FLAME, "Flame", "Flames", ParamFromFlame( 0.08 ) ),
+	standard( PT_FLAME, "Flame", "Flames", ParamFromFlame( 0.20 ) ),
 	standard( PT_SHIMMER, "Shimmer", "Flames", 0.5f ),
 	standard( PT_DISTANCE, "Distance", "Flames", ParamFromDistance( 6.0 ) ),
 
-	standard( PT_FIELD, "Field Width", "View", ParamFromField( 1.8 ) ),
+	standard( PT_FIELD, "Field Width", "View", ParamFromField( 1.9 ) ),
 	standard( PT_TUBE_HEIGHT, "Tube Height", "View", ParamFromTubeHeight( 0.2 ) ),
 	standard( PT_EXPOSURE, "Exposure", "View", ParamFromExposure( 0.0 ) ),
 	option( PT_BACKDROP, "Backdrop", "View", 1.0f, kBackdropNames, static_cast< int >( Backdrop::Count ) ),
