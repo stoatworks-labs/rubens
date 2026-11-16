@@ -229,12 +229,17 @@ void Duct::build( bool resetState )
 			cosTable[ static_cast< size_t >( n ) * holeStride + i ] = static_cast< float >( std::cos( n * kPiD * HoleX( i ) / L ) );
 	amp.assign( static_cast< size_t >( modes ), 0.0f );
 	pressure.assign( static_cast< size_t >( holeStride ), 0.0f );
+	residual.assign( static_cast< size_t >( holeStride ), 0.0f );
+	for( int i = 0; i < holes; ++i )
+		residual[ static_cast< size_t >( i ) ] = static_cast< float >( Residual( HoleX( i ) ) );
+	residualCap = Residual( L );
 	if( resetState || flow.size() != static_cast< size_t >( holes ) )
 	{
 		flow.assign( static_cast< size_t >( holes ), q0 );
 		flame.assign( static_cast< size_t >( holes ), 1.0 );
 		aeration.assign( static_cast< size_t >( holes ), 0.0 );
-		cap = 0.0;
+		cap          = 0.0;
+		lastVelocity = 0.0;
 		for( Mode& m : mode )
 			m.z[ 0 ] = m.z[ 1 ] = m.z[ 2 ] = 0.0;
 	}
@@ -250,8 +255,9 @@ void Duct::Reset()
 	std::fill( flame.begin(), flame.end(), 1.0 );
 	std::fill( aeration.begin(), aeration.end(), 0.0 );
 	std::fill( pressure.begin(), pressure.end(), 0.0f );
-	cap     = 0.0;
-	samples = 0;
+	cap          = 0.0;
+	lastVelocity = 0.0;
+	samples      = 0;
 }
 
 double Duct::HoleX( int i ) const
@@ -298,8 +304,10 @@ void Duct::Process( const float* velocity, int count )
 
 	for( int k = 0; k < count; ++k )
 	{
-		const double v = velocity[ k ];
-		double capSum  = 0.0;
+		const double v    = velocity[ k ];
+		const double dvdt = ( v - lastVelocity ) * tube::kTapRate;
+		lastVelocity      = v;
+		double capSum     = 0.0;
 		for( int n = 0; n < modes; ++n )
 		{
 			Mode& m          = mode[ static_cast< size_t >( n ) ];
@@ -310,12 +318,14 @@ void Duct::Process( const float* velocity, int count )
 			amp[ static_cast< size_t >( n ) ] = static_cast< float >( m.z[ 0 ] );
 			capSum += ( n & 1 ) ? -m.z[ 0 ] : m.z[ 0 ];
 		}
-		cap = capSum;
+		cap = capSum + residualCap * dvdt;
 
-		//p_i = sum_n a_n cos( n pi x_i / L ): over the holes in the inner
-		//loop, so it vectorises without reassociating a sum.
-		float* p = pressure.data();
-		std::fill( p, p + holeStride, 0.0f );
+		//p_i = sum_n a_n cos( n pi x_i / L ) + the remainder: over the holes
+		//in the inner loop, so it vectorises without reassociating a sum.
+		float* p      = pressure.data();
+		const float g = static_cast< float >( dvdt );
+		for( int i = 0; i < holeStride; ++i )
+			p[ i ] = residual[ static_cast< size_t >( i ) ] * g;
 		for( int n = 0; n < modes; ++n )
 		{
 			const float an   = amp[ static_cast< size_t >( n ) ];
@@ -453,7 +463,22 @@ std::complex< double > Duct::Response( double hz, double x ) const
 				k0[ i ][ j ] = j == 0 ? C( m.b[ i ] ) : k[ i ][ j ];
 		total += det3( k0 ) / d * std::cos( n * kPiD * x / spec.length );
 	}
-	return total;
+	return total + s * Residual( x );
+}
+
+double Duct::Residual( double x ) const
+{
+	//sum_{n>=1} cos( n t ) / ( n^2 + a^2 ) = pi cosh( a ( pi - t ) ) / ( 2 a sinh( pi a ) )
+	//- 1 / ( 2 a^2 ) on 0 <= t <= 2 pi (a -> 0: pi^2 / 6 - pi t / 2 + t^2 / 4),
+	//less the modes kept; wn^2 = ( n pi c / L )^2 + wH^2 = ( pi c / L )^2 ( n^2 + a^2 ).
+	const double L = spec.length, c = gas::kSoundSpeed;
+	const double t = kPiD * std::clamp( x / L, 0.0, 1.0 );
+	const double a = std::sqrt( helmholtz2 ) * L / ( kPiD * c );
+	double sum     = a < 1e-4 ? kPiD * kPiD / 6.0 - kPiD * t / 2.0 + t * t / 4.0
+	                          : kPiD * std::cosh( a * ( kPiD - t ) ) / ( 2.0 * a * std::sinh( kPiD * a ) ) - 1.0 / ( 2.0 * a * a );
+	for( int n = 1; n < modes; ++n )
+		sum -= std::cos( n * t ) / ( n * n + a * a );
+	return 2.0 * gas::kDensity * L / ( kPiD * kPiD ) * sum;
 }
 
 bool Duct::Pole( int n, double& hz, double& decay ) const

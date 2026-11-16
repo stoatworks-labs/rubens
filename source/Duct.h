@@ -164,8 +164,13 @@ public:
 	double LosslessHz( int n ) const;
 	double WallDamping( int n ) const;///< sigma_n, 1/s
 	double CutOnHz() const;
-	/// p( x ) / v in Pa per m/s: the same modes, solved in the frequency domain.
+	/// p( x ) / v in Pa per m/s: the same modes, solved in the frequency
+	/// domain, plus the left-out modes' quasi-static remainder (Residual).
 	std::complex< double > Response( double hz, double x ) const;
+	/// The modes above the cut-on, left out, still answer the piston below
+	/// their own frequencies: p = Residual( x ) dv/dt, the sum over n >= Modes()
+	/// of 2 rho c^2 cos( n pi x / L ) / ( L wn^2 ), in closed form.
+	double Residual( double x ) const;
 	/// Mode n's oscillatory pole (frequency, decay rate), from its 3x3 system.
 	bool Pole( int n, double& hz, double& decay ) const;
 
@@ -205,6 +210,9 @@ private:
 	std::vector< Mode > mode;
 	std::vector< float > cosTable;///< [ mode ][ hole ], holeStride apart
 	std::vector< float > amp, pressure;
+	std::vector< float > residual;///< per hole: the left-out modes' quasi-static p / ( dv/dt ), Pa s^2 / m
+	double residualCap = 0.0;     ///< the same at x = L
+	double lastVelocity = 0.0;    ///< v one sample back, for dv/dt
 	std::vector< double > flow, flame, aeration;
 	double cap      = 0.0;
 	int64_t samples = 0;

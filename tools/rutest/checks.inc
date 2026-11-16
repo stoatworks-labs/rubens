@@ -96,13 +96,16 @@ void fft( std::vector< Complex >& x )
 /// alias f_m = f + m fs carries sinc( f_m dt ) e^{j pi f_m dt}.
 Complex zohResponse( const Duct& duct, double hz, double x, int aliases = 400 )
 {
-	Complex sum = 0.0;
+	//The modes through the hold, alias by alias; the left-out modes'
+	//remainder R dv/dt is a first difference on the samples, (1 - z^-1) / dt.
+	const double r = duct.Residual( x );
+	Complex sum    = r * ( 1.0 - std::polar( 1.0, -2.0 * kPi * hz * kDt ) ) / kDt;
 	for( int m = -aliases; m <= aliases; ++m )
 	{
 		const double fm = hz + m * kFs;
 		const double u  = fm * kDt;
 		const double sc = std::fabs( u ) < 1e-12 ? 1.0 : std::sin( kPi * u ) / ( kPi * u );
-		sum += duct.Response( fm, x ) * sc * std::polar( 1.0, kPi * u );
+		sum += ( duct.Response( fm, x ) - Complex( 0.0, 2.0 * kPi * fm * r ) ) * sc * std::polar( 1.0, kPi * u );
 	}
 	return sum;
 }
@@ -226,6 +229,50 @@ int runResonance( const Perturb& perturb )
 		Check( worstPeak < 1e-4, fmt( "(2b) lossless, the time domain: %d peaks of a 2^18-sample impulse response (Hann, parabolic) against the closed "
 		                              "form: worst %.1e at n = %d (<= 1e-4); Hz got/closed:%s",
 		                              d.Modes(), worstPeak, worstMode, list.c_str() ) );
+	}
+
+	//(2c) Lossless: the amplitude, against the uniformly shunted line solved
+	//as a wave, not as modes. p'' = -kappa^2 p with kappa^2 = ( w^2 - wH^2 ) /
+	//c^2, u( 0 ) = v at the piston and u( L ) = 0 give
+	//p( x ) / v = -j w rho cos( kappa ( L - x ) ) / ( kappa sin kappa L ): the
+	//piston's drive, the shunt, the modes and the left-out modes' remainder in
+	//one number, between the poles and below fH (where kappa is imaginary and
+	//the wave decays from the piston). At the cap the modes' sum alternates
+	//and converges fast; at the piston it does not, and the remainder's
+	//quasi-static form is all that stands in for the modes left out.
+	{
+		Duct d;
+		d.Configure( TubeSpec {} );
+		d.SetHooksForTest( kDuctLossless | perturb.ductHooks );
+		const double c = gas::kSoundSpeed, rho = gas::kDensity, L = d.Spec().length;
+		const double wH = 2.0 * kPi * d.HelmholtzHz();
+		std::vector< double > freqs = { 20.0, 50.0, 90.0, 0.5 * ( 90.0 + d.LosslessHz( 0 ) ) };
+		for( int m = 0; m + 1 < d.Modes(); ++m )
+			for( double at : { 0.3, 0.5 } )
+				freqs.push_back( d.LosslessHz( m ) + at * ( d.LosslessHz( m + 1 ) - d.LosslessHz( m ) ) );
+		//[end][band]: worst below 400 Hz, to f_c / 2, above it.
+		double worst[ 2 ][ 3 ] = {};
+		for( double hz : freqs )
+		{
+			const double w     = 2.0 * kPi * hz;
+			const Complex kap  = std::sqrt( Complex( ( w * w - wH * wH ) / ( c * c ), 0.0 ) );
+			const Complex atL  = Complex( 0.0, -w * rho ) / ( kap * std::sin( kap * L ) );
+			const Complex at0  = atL * std::cos( kap * L );
+			//Both against the larger end: p( 0 ) has its zeros between the poles.
+			const double scale = std::max( std::abs( atL ), std::abs( at0 ) );
+			const double err[ 2 ] = { std::abs( d.Response( hz, L ) - atL ) / scale, std::abs( d.Response( hz, 0.0 ) - at0 ) / scale };
+			const int band = hz < 400.0 ? 0 : hz <= 0.5 * d.CutOnHz() ? 1 : 2;
+			for( int e = 0; e < 2; ++e )
+				for( int b = band; b < 3; ++b )
+					if( b == band || ( b == 1 && band == 0 ) )
+						worst[ e ][ b ] = std::max( worst[ e ][ b ], err[ e ] );
+		}
+		Check( worst[ 0 ][ 0 ] <= 1e-4 && worst[ 0 ][ 1 ] <= 2e-3 && worst[ 1 ][ 0 ] <= 1e-3 && worst[ 1 ][ 1 ] <= 5e-2,
+		       fmt( "(2c) lossless, the amplitude against the shunted line's wave solution -j w rho cos( kappa ( L - x ) ) / ( kappa sin kappa L ) "
+		            "(drive, shunt, modes and the left-out modes' remainder together), %zu frequencies from 20 Hz (evanescent below fH %.1f Hz), "
+		            "0.3 and 0.5 of the way between poles, each end against the larger: at the cap %.1e below 400 Hz (<= 1e-4), %.1e to f_c / 2 "
+		            "(<= 2e-3); at the piston %.1e (<= 1e-3), %.1e (<= 5e-2); above f_c / 2, near the first mode left out, %.1e and %.1e",
+		            freqs.size(), d.HelmholtzHz(), worst[ 0 ][ 0 ], worst[ 0 ][ 1 ], worst[ 1 ][ 0 ], worst[ 1 ][ 1 ], worst[ 0 ][ 2 ], worst[ 1 ][ 2 ] ) );
 	}
 
 	//(3) Gardner, Gee & Dix 2009, Table II (propane, ideal velocity source):
