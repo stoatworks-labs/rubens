@@ -166,6 +166,13 @@ void AudioInput::Select( float value )
 		//once the device is back.
 		name = known != seen.end() ? known->second : "(device " + std::to_string( static_cast< long >( value ) ) + " not present)";
 	}
+	//RUBENS_NO_DEVICES=1 (verification): a device is never opened, nor even
+	//looked up -- earshot's lookup itself starts CoreAudio. The host's FFT.
+	if( !name.empty() && g_factory == nullptr && devicesDisabled() )
+	{
+		diag::info( "audio input: " + name + " not opened (RUBENS_NO_DEVICES): host FFT" );
+		name.clear();
+	}
 	engine->selectDevice( name.c_str() );
 	diag::info( "audio input: " + ( name.empty() ? std::string( "host FFT" ) : name ) );
 }

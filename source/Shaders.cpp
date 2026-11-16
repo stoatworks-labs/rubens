@@ -261,7 +261,7 @@ vec3 flames( vec2 m )
 		if( t >= 1.0 )
 			continue;
 		float dx = m.x - holeX( i );
-		float hw = 0.0012 + 0.09 * Lf * pow( sin( kPi * pow( t, 0.55 ) ), 0.8 );
+		float hw = 0.0012 + 0.05 * Lf * pow( sin( kPi * pow( t, 0.55 ) ), 0.8 );
 		float r  = abs( dx ) / hw;
 		if( r >= 1.0 )
 			continue;

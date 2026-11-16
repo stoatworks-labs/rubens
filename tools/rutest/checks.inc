@@ -223,9 +223,19 @@ int runResonance( const Perturb& perturb )
 			if( m <= 3 || m == 10 || m == d.Modes() - 1 )
 				list += fmt( " n%d %.2f/%.2f", m, got, want );
 		}
-		Check( worstPole < 1e-9, fmt( "(2a) lossless (R -> 0, sigma -> 0): every mode's pole against sqrt( fH^2 + fn0^2 ), fH %.2f Hz with the holes' "
-		                              "end correction: worst %.1e (<= 1e-9)",
-		                              d.HelmholtzHz(), worstPole ) );
+		//The closed form's own numbers, from the spec's table typed here (not
+		//the plugin's constants): fH = c / 2 pi sqrt( S_h / ( S t_eff d ) ),
+		//t_eff = t + 2 x 0.8217 r_h, d = L / round( L / pitch ); fn0 = n c / 2 L.
+		const double cP = 246.59, rh = 0.92e-3, aT = 0.026, tW = 0.004, L = 1.524;
+		const double dP = L / std::round( L / 0.022 );
+		const double fH = cP / ( 2.0 * kPi ) * std::sqrt( rh * rh / ( aT * aT * ( tW + 2.0 * 0.8217 * rh ) * dP ) );
+		double worstForm = std::fabs( d.HelmholtzHz() / fH - 1.0 );
+		for( int m = 0; m < d.Modes(); ++m )
+			worstForm = std::max( worstForm, std::fabs( d.LosslessHz( m ) / std::sqrt( fH * fH + std::pow( m * cP / ( 2.0 * L ), 2.0 ) ) - 1.0 ) );
+		Check( worstPole < 1e-9 && worstForm < 1e-12,
+		       fmt( "(2a) lossless (R -> 0, sigma -> 0): every mode's pole against sqrt( fH^2 + fn0^2 ), worst %.1e (<= 1e-9); fH %.4f Hz and fn0 "
+		            "from the geometry (t_eff = 4 mm + 2 x 0.8217 r_h, propane's 246.59 m/s) typed here, worst %.1e (<= 1e-12)",
+		            worstPole, d.HelmholtzHz(), worstForm ) );
 		Check( worstPeak < 1e-4, fmt( "(2b) lossless, the time domain: %d peaks of a 2^18-sample impulse response (Hann, parabolic) against the closed "
 		                              "form: worst %.1e at n = %d (<= 1e-4); Hz got/closed:%s",
 		                              d.Modes(), worstPeak, worstMode, list.c_str() ) );
@@ -838,12 +848,12 @@ int runSpacing( const Perturb& perturb )
 //===========================================================================
 int runRates( const Perturb& perturb )
 {
-	std::printf( "\n=== fps: the harness's track fed at 24, 30, 60 and 240 fps: the flames at t = 1 s are the same (the duct integrates at the tap "
-	             "rate, not the frame rate)\n" );
+	std::printf( "\n=== rates: the harness's track fed at 24, 30, 60 and 240 fps: the flames at t = 1 s are the same (the duct integrates at the tap "
+	             "rate, not the frame rate); and what Volume means\n" );
 	const Raster raster = kRasters.back();
 	std::vector< std::vector< float > > results;
 	std::string list;
-	double moved = 0.0;
+	double moved = 0.0, v0 = 0.0;
 	for( double fps : { 24.0, 30.0, 60.0, 240.0 } )
 	{
 		Rig rig;
@@ -856,6 +866,7 @@ int runRates( const Perturb& perturb )
 		if( !rig.Render( static_cast< int >( fps ) ) )
 			return 1;
 		results.push_back( rig.plugin.LastFrame().lengths );
+		v0 = rig.plugin.LastFrame().v0;
 		for( float l : results.back() )
 			moved = std::max( moved, std::fabs( l / rig.plugin.LastFrame().flame - 1.0 ) );
 		list += fmt( " %g fps: %lld samples;", fps, static_cast< long long >( rig.plugin.TubeForTest().Samples() ) );
@@ -866,6 +877,14 @@ int runRates( const Perturb& perturb )
 			worst = std::max( worst, static_cast< double >( std::fabs( results[ r ][ i ] - results[ 0 ][ i ] ) ) );
 	Check( worst == 0.0 && moved > 0.03,
 	       fmt( "the largest difference between rates %.2e m (must be 0); the flames moved up to %.0f%% from quiet;%s", worst, 100.0 * moved, list.c_str() ) );
+	//Volume: the SPL a full-scale sine would make as a travelling wave in
+	//propane, so its peak velocity is sqrt 2 p_rms / ( rho c ). The numbers
+	//are the spec's, typed here, not read from the plugin.
+	const double want = std::sqrt( 2.0 ) * 20e-6 * std::pow( 10.0, 150.0 / 20.0 ) / ( 1.8652 * 246.59 );
+	Check( std::fabs( v0 / want - 1.0 ) < 1e-6,
+	       fmt( "Volume 150 dB: a full-scale sample drives the piston at %.6f m/s, sqrt 2 x 20 uPa x 10^(150/20) / (1.8652 x 246.59) = %.6f "
+	            "(within 1e-6)",
+	            v0, want ) );
 	return Verdict();
 }
 
@@ -1329,6 +1348,58 @@ int runRefraction( const Perturb& perturb )
 		       fmt( "%dx%d, Flame 20 cm, Distance 30 m, Field 0.8 m, Shimmer 0: P off the closed form by %.1e um of %.2f um; the displacement (up to %.1f px) within "
 		            "0.1 px + 2%% at %d px where columns are >= 8 px wide: worst %.2f of the tolerance",
 		            raster.w, raster.h, worstP, maxP, maxShift, compared, worstShift ) );
+
+		//The Over samples its clip where the displacement says: a clip that is
+		//its own coordinates (R = x, G = y, float, linearly filtered) read back
+		//above the flames' tips, where nothing but the clip is drawn.
+		Floats ramp( static_cast< size_t >( raster.w ) * raster.h * 4 );
+		for( int y = 0; y < raster.h; ++y )
+			for( int x = 0; x < raster.w; ++x )
+			{
+				float* q = &ramp[ ( static_cast< size_t >( y ) * raster.w + x ) * 4 ];
+				q[ 0 ]   = ( x + 0.5f ) / raster.w;
+				q[ 1 ]   = ( y + 0.5f ) / raster.h;
+				q[ 2 ]   = 0.0f;
+				q[ 3 ]   = 1.0f;
+			}
+		Rig over( true );
+		if( !startRig( over, raster.w, raster.h, perturb, &ramp ) )
+			return 1;
+		tubeDefaults( over );
+		over.Set( PT_FLAME, ParamFromFlame( 0.2 ) );
+		over.Set( PT_DISTANCE, ParamFromDistance( 30.0 ) );
+		over.Set( PT_FIELD, ParamFromField( 0.8 ) );
+		over.Set( PT_MIX, 1.0f );
+		over.plugin.SetHooksForTest( perturb.hooks | shaders::kHookDisplacement );
+		if( !over.Render( 2 ) )
+			return 1;
+		const Floats shiftField = over.Output();
+		over.plugin.SetHooksForTest( perturb.hooks );
+		if( !over.Render( 1 ) )
+			return 1;
+		const Floats seen    = over.Output();
+		const FrameData& od  = over.plugin.LastFrame();
+		double worstRead = 0.0, largest = 0.0;
+		int read = 0;
+		for( int y = 2; y < raster.h - 2; ++y )
+			for( int x = 2; x < raster.w - 2; ++x )
+			{
+				const double h = ( y + 0.5 ) * pixel - ( od.tubeY + tube::kRadius );
+				if( h < od.flame * 1.2 + 3.0 * pixel )
+					continue;
+				const size_t at  = ( static_cast< size_t >( y ) * raster.w + x ) * 4;
+				const double sx  = shiftField[ at ], sy = shiftField[ at + 1 ];
+				if( std::hypot( sx, sy ) < 0.1 )
+					continue;
+				const double rx = seen[ at ] * raster.w - 0.5 - x, ry = seen[ at + 1 ] * raster.h - 0.5 - y;
+				worstRead       = std::max( worstRead, std::hypot( rx - sx, ry - sy ) );
+				largest         = std::max( largest, std::hypot( sx, sy ) );
+				++read;
+			}
+		Check( read > 50 && worstRead <= 0.02,
+		       fmt( "%dx%d: the Over reads its clip at the pixel plus the displacement: a coordinate ramp read back above the tips at %d px "
+		            "(shifts 0.1 to %.2f px): off by at most %.4f px (<= 0.02)",
+		            raster.w, raster.h, read, largest, worstRead ) );
 	}
 	return Verdict();
 }
