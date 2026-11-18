@@ -44,7 +44,8 @@ the harness's own music, 5.5 s in.*
 > the fleet's Arena gate passed 15 of 15 (4 skipped: that machine has no sound device, so the
 > controls that need sound weren't tried), and in Arena 7.29.0 on a Mac, where both showed every
 > control and kept a half-transparent clip's alpha right, but Resolume's own sound analysis
-> reached them as silence (see [Known limits](#known-limits)). It has **never been in a show** and
+> reached them as silence, so they have **never moved to music inside Resolume** (see
+> [Known limits](#known-limits)). It has **never been in a show** and
 > **never been driven by a real audio input**: every sound it has heard was fed to it.
 > What the flames and the hot air look like is **chosen**, not measured, and no source gives a
 > working tube's gas pressure or sound level (see [Known limits](#known-limits)). Try it on a
@@ -429,7 +430,8 @@ Windows  %LOCALAPPDATA%\rubens\logs\rubens.YYYY-MM-DD.log
   and nobody has measured what Resolume's bands hold. The bands can also read above full scale;
   Rubens clips them. **In Arena 7.29.0 on a Mac the analysis reached Rubens as silence**, with
   one of Resolume's demo clips playing on the layer below: the flames stayed at their quiet
-  height. Why isn't known. If that happens to you, choose an audio input instead.
+  height, so Rubens has **never moved to music inside Resolume**. Why isn't known. If that
+  happens to you, choose an audio input instead.
 - **Looks, not measurements:** the flames' shape and colour, the plumes' growth and the shimmer.
   The flames' 50 ms response to their fuel is an assumption.
 - **Not modelled:** the jets feeding back into the pipe's sound, temperature along the tube, the

@@ -14,10 +14,10 @@ Silicon, macOS 26) against a fresh universal Release build: every check at 1280x
 plugins, 13 of 13 negative controls, 25 of 25 mutants, 14 of 14 controls alive in the sweep
 for each plugin, oxbow reading and rendering both bundles with devices disabled. **In Resolume
 only briefly** (2026-11-18): the fleet's Arena gate on win-lab (Arena 7.27.1, llvmpipe, no sound
-device) passed 15 of 15 with 4 skipped, and Arena 7.29.0 on this Mac, driven over REST in a new
+device) passed 15 of 15 with 4 skipped, on a pre-tag build and again on the v0.1.0 zip, and Arena 7.29.0 on this Mac, driven over REST in a new
 composition, registered both, showed every control, kept a half-transparent clip's alpha right
-in the Over, and got Resolume's sound analysis as silence with a demo clip playing below (README,
-"In Resolume"). **No live audio device ever opened**, by rubens or by earshot; Audio Input stayed
+in the Over, and got Resolume's sound analysis as silence with a demo clip playing below, so it has never moved
+to music inside Resolume (README, "In Resolume"). **No live audio device ever opened**, by rubens or by earshot; Audio Input stayed
 on None (host FFT). Windows builds come from CI (MSVC). earshot is a snapshot of `github.com/stoatworks-labs/earshot` at
 `8124191`, unpatched.
 

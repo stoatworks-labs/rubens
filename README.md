@@ -3,7 +3,8 @@
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. It has run in Resolume only briefly,
 > in Arena 7.27.1 on Windows (software rendering, no sound device) and Arena 7.29.0 on a Mac,
-> and **never in a show**; **it has never opened a live audio device**. Everything else below is established
+> where Resolume's sound analysis reached it as silence: it has **never moved to music inside
+> Resolume** and **never been in a show**; **it has never opened a live audio device**. Everything else below is established
 > by an offline harness, `rutest`, that drives the real plugin class through the same
 > `ProcessOpenGL` a host calls, in a headless GL context on a synthetic clock, on this Mac's GPU
 > at two rasters, and feeds it audio through the same earshot `feed()` path a device would use.
@@ -41,6 +42,47 @@ flames](docs/hero.png)
 
 <sub>One frame rendered by `rutest`, not captured from Resolume: SW Rubens at its defaults on
 the Grid backdrop, 5.5 s into the harness's track (`--frames 330`).</sub>
+
+<!-- downloads:start -->
+
+## Download
+
+**[v0.1.0](https://github.com/stoatworks-labs/rubens/releases/tag/v0.1.0)** — prebuilt for macOS and Windows. Pick your platform:
+
+<details>
+<summary><b>macOS</b> — Universal (Apple Silicon + Intel)</summary>
+
+| Build | Download | Size |
+| --- | --- | --- |
+| Universal (Apple Silicon + Intel) · .dmg disk image | [`rubens-0.1.0-macos-universal.dmg`](https://github.com/stoatworks-labs/rubens/releases/download/v0.1.0/rubens-0.1.0-macos-universal.dmg) | 1.2 MB |
+| Universal (Apple Silicon + Intel) · .zip archive | [`rubens-macos-universal.zip`](https://github.com/stoatworks-labs/rubens/releases/latest/download/rubens-macos-universal.zip) | 1.1 MB |
+
+</details>
+
+<details>
+<summary><b>Windows</b> — x64</summary>
+
+| Build | Download | Size |
+| --- | --- | --- |
+| x64 · .exe installer | [`rubens-0.1.0-windows-x86_64-setup.exe`](https://github.com/stoatworks-labs/rubens/releases/download/v0.1.0/rubens-0.1.0-windows-x86_64-setup.exe) | 370 KB |
+| x64 · .zip archive | [`rubens-windows-x86_64.zip`](https://github.com/stoatworks-labs/rubens/releases/latest/download/rubens-windows-x86_64.zip) | 488 KB |
+
+</details>
+
+All builds, checksums and release notes: [github.com/stoatworks-labs/rubens/releases](https://github.com/stoatworks-labs/rubens/releases).
+
+macOS builds are signed and notarised and open normally. The Windows builds are unsigned, so SmartScreen warns once.
+
+<!-- downloads:end -->
+
+## Video
+
+> **Photosensitivity warning:** the video shows flames that flare with the music, and regular
+> patterns: a row of evenly spaced flames, and a fine grid behind them.
+
+A video of both plugins, rendered by `rutest` with Resolume's demo stems and some synthesised
+tones as the sound, is scheduled on YouTube for 07:50 London time on 19 November 2026. Its link
+goes here once it is public.
 
 ## The one idea
 
@@ -179,7 +221,8 @@ test clip whose left third is opaque, middle third white at 50% alpha and right 
 transparent, on a blue layer, with Distance at 0 every third above the flames is identical to
 the bare clip, the half-transparent band included, and the tube and flames stand solid over the
 transparent third: Arena's premultiplied input and the Over's premultiplied output agree.
-**Resolume's sound analysis never reached it there.** With Resolume's `Beat 001.mov` playing on
+**It has never moved to music inside Resolume: Resolume's sound analysis never reached it
+there.** With Resolume's `Beat 001.mov` playing on
 the layer below (its picture moving), the flames held their quiet height in every snapshot, at
 Volume 145 and 150 dB and with FFT Law on Linear Mag and Log Mag; woofer's check on the same
 Arena that day saw the same. Why isn't known, and the Mac's audio settings weren't looked at or
@@ -187,8 +230,9 @@ changed. Arena's clock reached the plugin in milliseconds, its log has no error 
 plugin, and no microphone prompt appeared.
 
 **On Windows**, in Arena 7.27.1 on win-lab (software rendering, Mesa llvmpipe, no GPU and no
-sound device), with the x64 DLLs the release workflow built from this source, the fleet's Arena
-gate passed 15 of 15 with 4 skipped: both load and register (`SW Rubens`, RU01, a source; `SW
+sound device), the fleet's Arena gate passed 15 of 15 with 4 skipped twice: with the release's
+own x64 DLLs, from the v0.1.0 zip, and before that with a pre-tag build of the release workflow
+(whose DLLs differ in hash, as every build's do). Both load and register (`SW Rubens`, RU01, a source; `SW
 Rubens Over`, RU02, an effect), list in Arena's source and effect browsers with all 22 and 23
 parameters as declared (the Over's after Arena's own Opacity; name, order, type, range and
 default), and render. With Shimmer at 0 to hold the flames still, 9 of the source's controls
@@ -304,8 +348,8 @@ user guide's "Flashing, and keeping it safe" has the table.
   the gas, flames going out.
 - **Resolume's FFT is unmeasured:** the fallback's level depends on FFT Law, and its bands can
   read above full scale (they are clipped). In Arena 7.29.0 on a Mac the analysis reached the
-  plugin as silence with a demo clip playing on the layer below, so the fallback has never been
-  seen moving the flames inside Resolume.
+  plugin as silence with a demo clip playing on the layer below, so the plugins have **never
+  moved to music inside Resolume**.
 - **Audio inputs, from earshot's behaviour as this snapshot has it:** with no input chosen the
   lamp is amber, which is normal; a device that has gone stays missing (blinking red) until it
   is back or another is chosen; and an open input that delivers exact zeros for 3 s turns the
