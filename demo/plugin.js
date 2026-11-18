@@ -80,9 +80,11 @@
  * up, and the status line reports which way round the last two seconds were.
  * No default is changed.
  *
- * **Photosensitivity.** The flames jump with the music's beats; index.html
- * says so above the page, and the measured figures are in the user guide. No
- * default is changed for it.
+ * **Photosensitivity.** The flames jump with the music's beats, and at the
+ * defaults on this page's track they go over the flash line in a third of the
+ * picture (8 rises and falls in a second; the Gas 30 Pa and Volume 130 dB
+ * presets make none). index.html says so above the page, with the figures,
+ * and links the user guide's table. No default is changed for it.
  *
  * **Left off the panel**: Audio Input and Rescan Inputs (no device exists
  * here), the Audio buffer (Resolume's FFT, which the page writes only in the
