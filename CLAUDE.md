@@ -6,7 +6,8 @@ exact three-state ZOH system, plus a closed-form remainder for the modes left ou
 as Bernoulli jets with inertia integrated per sample, the flames following their outward fuel
 flow, and the plumes above them refracting the backdrop (source) or the clip (Over) by
 line-of-sight sums, schlieren's way. C++/GLSL, CMake MODULE → universal `.bundle`s (macOS) +
-Windows `.dll`s (never built). MIT.
+Windows `.dll`s (built on GitHub's Windows runner). MIT. Public:
+`github.com/stoatworks-labs/rubens`.
 
 | id | display name | bundle | type |
 | --- | --- | --- | --- |
@@ -97,16 +98,20 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
 - `rubens_core` is an OBJECT library: each plugin registers itself from a file-scope
   constructor nothing references.
 - The macOS build must be universal. Check with `lipo`, never the build log.
-- `external/earshot/` is a snapshot of `~/dev/earshot` at `8124191`, unpatched (`SNAPSHOT`).
-  Never edit it here; change earshot upstream and take a new snapshot.
+- `external/earshot/` is a snapshot of earshot (`github.com/stoatworks-labs/earshot`) at
+  `8124191`, unpatched (`SNAPSHOT`). Never edit it here; change earshot upstream and take a new
+  snapshot. Its own CLAUDE.md and AGENTS.md are earshot's as of that commit, status lines and all.
 - **Provisional hand copies:** `source/StoatworksAbout*.h` (guide = "", no user guide) and
   `ATTRIBUTIONS.md`. Once the project is registered in stoatworks-backend, `sync-about.py`
   and `sync-attributions.py` generate them; edit them there then.
-- **No `.github/workflows/`, on purpose.** GitHub Actions only on a public repo, and this one
-  has no remote. Add CI (`rutest --offline` and the software-renderer subset) only once it is
-  public.
-- Local only: `~/dev/rubens`, no remote, nothing released, not on the website, never loaded
-  into Resolume. The spec is `~/Projects/resolume/specs/SPEC-rubens.md`.
+- **CI** (`.github/workflows/ci.yml`): macOS builds arm64 with the tools and runs `--list`,
+  `--offline` and `glslc`; Windows builds both DLLs with MSVC and loads each as a host does
+  (`tools/wincheck.ps1`, whose `-Params` changes whenever a control or the About block does).
+  `release.yml` builds the universal bundles and the DLLs with their zips, `.dmg` and
+  installer; dispatched by hand it builds without publishing, and a `v*` tag publishes.
+  Actions only because the repo is public: a private copy must never enable them.
+- Checkout: `~/Projects/resolume/rubens`, public at `github.com/stoatworks-labs/rubens`. The
+  spec is `~/Projects/resolume/specs/SPEC-rubens.md`.
 
 ## Diagnostics
 

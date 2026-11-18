@@ -15,9 +15,9 @@ their work.
 
 ### Live audio — Stoatworks earshot
 
-<https://github.com/stoatworks-labs/earshot> (intended home; on 2026-11-16 a local repository only)  
+<https://github.com/stoatworks-labs/earshot>  
 Licence: MIT  
-Copyright: Stoatworks
+Copyright: Stoatworks Labs
 
 Vendored at external/earshot as a snapshot of commit 8124191, unmodified (external/earshot/SNAPSHOT). The capture device worker, the device list and keys, the Silent state, the 16 kHz waveform tap the duct is integrated from, the scripted capture backend the harness drives, and the fallback to Resolume's FFT bins. earshot's own attributions (spasis, pattern, miniaudio) are in external/earshot/ATTRIBUTIONS.md.
 
@@ -31,11 +31,11 @@ The Audio Input option whose values are device-name keys, so a composition remem
 
 ### The plugin shell, the harness and the tooling — Stoatworks haze, and woofer's earshot wiring
 
-<https://github.com/stoatworks-labs/haze> (local only on 2026-11-16)  
+<https://github.com/stoatworks-labs/haze>, <https://github.com/stoatworks-labs/woofer>  
 Licence: MIT  
 Copyright: Stoatworks Labs
 
-Two plugins on one OBJECT core with an `isEffect` flag, the table of controls, the host-clock vote, the sRGB encode and the tone curve; the harness's rig, PNG writer, cue sheets, `--pipe`/`--film` (SIGPIPE ignored, a closed stdout exits 1), `--negative` with its perturbation hooks, `--state`, `--names`, `--cues`, `--offline` and `--bench`; tools/verify.sh, tools/mutate.sh, tools/glslc.sh and tools/sweep.py are haze's (ferrofluid's before it), adapted. The WAV reader, the feed through earshot's `feed()` and the rule that only a changed menu value reaches `selectDevice` are woofer's (local only), read and adapted. scripts/release-lib.sh is the fleet's, unchanged.
+Two plugins on one OBJECT core with an `isEffect` flag, the table of controls, the host-clock vote, the sRGB encode and the tone curve; the harness's rig, PNG writer, cue sheets, `--pipe`/`--film` (SIGPIPE ignored, a closed stdout exits 1), `--negative` with its perturbation hooks, `--state`, `--names`, `--cues`, `--offline` and `--bench`; tools/verify.sh, tools/mutate.sh, tools/glslc.sh and tools/sweep.py are haze's (ferrofluid's before it), adapted. The WAV reader, the feed through earshot's `feed()` and the rule that only a changed menu value reaches `selectDevice` are woofer's, read and adapted. scripts/release-lib.sh is the fleet's, unchanged.
 
 ### Background-oriented schlieren — Stoatworks schlieren
 

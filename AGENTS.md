@@ -7,14 +7,15 @@ where this repo departs from it).
 
 ## Status
 
-**v0.1.0, local only, 2026-11-16.** `OXBOW=… tools/verify.sh` passes on this Mac (Apple
+**v0.1.0, 2026-11-16; public at `github.com/stoatworks-labs/rubens` from 2026-11-18.**
+`OXBOW=… tools/verify.sh` passes on this Mac (Apple
 Silicon, macOS 26) against a fresh universal Release build: every check at 1280x720 and
 320x180, five on Apple's software renderer, `--offline` with no GL context, the pipe for both
 plugins, 13 of 13 negative controls, 25 of 25 mutants, 14 of 14 controls alive in the sweep
 for each plugin, oxbow reading and rendering both bundles with devices disabled. **Never
 loaded into Resolume; no live audio device ever opened**, by rubens or by earshot. Never built
-on Windows. No remote, nothing released, not on the website. earshot is a snapshot of
-`~/dev/earshot` at `8124191`, unpatched.
+on Windows before its CI. earshot is a snapshot of `github.com/stoatworks-labs/earshot` at
+`8124191`, unpatched.
 
 ## The idea
 
@@ -54,7 +55,7 @@ nothing) comes out of that chain.
   `isEffect` flag (haze's shape). The source has Backdrop and no Mix; the Over has Mix and no
   Backdrop. The About block last.
 - **earshot, snapshotted, not a submodule.** `external/earshot/` is `git archive 8124191` of
-  the local-only `~/dev/earshot`, with `SNAPSHOT` saying so and "Patches: none" (verify.sh
+  earshot (`github.com/stoatworks-labs/earshot`), with `SNAPSHOT` saying so and "Patches: none" (verify.sh
   fails if that line changes). Configured with `tapRate = 16000` (the tap's 6.4 kHz cutoff is
   above the duct's 2.78 kHz cut-on, and the duct's cost is per sample), `maxChannels = 2`, four
   bands with edges {40, 160, 640, 2560, 8000} Hz (used by the fallback only).
@@ -103,9 +104,11 @@ nothing) comes out of that chain.
   band's last level to this one, levels clamped to [0, 1].
 - **Volume** is the SPL (dB re 20 µPa, RMS) a full-scale sine would make as a travelling wave
   in propane: v₀ = √2·p_ref·10^(Volume/20)/(ρc). Typed in the harness and checked to 1e-6.
-- **No `.github/workflows/`.** BRIEF.md asks for ci.yml and release.yml; the machine's rule is
-  GitHub Actions on public repos only, and this repo has no remote at all. Left out, as woofer
-  did; add them (`rutest --offline`, the software subset) when it goes public.
+- **Workflows only once public.** BRIEF.md asks for ci.yml and release.yml; the machine's rule
+  is GitHub Actions on public repos only. Until it was public rubens shipped none, so nothing
+  could run by accident; `ci.yml` and `release.yml` came with the public repo (mirrorball's,
+  in haze's shape for two plugins, with woofer's `wincheck.ps1`). The software-renderer subset
+  stays in verify.sh: a runner's GL is not Apple's software renderer.
 
 ## Defaults
 
@@ -338,5 +341,4 @@ covers them.
    carry the plane-wave modes up to there. Conservative as built.
 5. **A pitch-driven end plunger** (Waetzmann's adjustable tubes) would be a second mechanism,
    not this one. Left out.
-6. **CI**: BRIEF.md's workflows versus the public-repos-only rule; none until it has a public
-   remote.
+6. ~~**CI**~~: settled when the repo went public (2026-11-18): `ci.yml` and `release.yml`.

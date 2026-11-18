@@ -68,8 +68,8 @@ schlieren sees it.
 
 ## Where the audio comes from
 
-From an audio input, through [earshot](external/earshot/README.md), the fleet's live-audio
-front end (a snapshot of commit `8124191`, unmodified). Its 16 kHz waveform tap is the
+From an audio input, through [earshot](https://github.com/stoatworks-labs/earshot), the fleet's
+live-audio front end ([a snapshot](external/earshot/SNAPSHOT) of commit `8124191`, unmodified). Its 16 kHz waveform tap is the
 loudspeaker's velocity, every sample once: the tube picks its own resonances out of whatever
 is played, chords and noise included. Pitch is not used.
 
@@ -142,7 +142,7 @@ and their music, where 3 Pa and 145 dB make the kicks flare the flames by 70–8
 
 ## Status
 
-**2026-11-16, v0.1.0, local only.** Built and verified offline on one Mac (Apple Silicon);
+**v0.1.0, 2026-11-16; public from 2026-11-18.** Built and verified offline on one Mac (Apple Silicon);
 never loaded into Resolume, never run against a real audio device, never built on Windows.
 No OpenFX port and no browser demo.
 
