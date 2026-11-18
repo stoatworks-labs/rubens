@@ -101,9 +101,11 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
 - `external/earshot/` is a snapshot of earshot (`github.com/stoatworks-labs/earshot`) at
   `8124191`, unpatched (`SNAPSHOT`). Never edit it here; change earshot upstream and take a new
   snapshot. Its own CLAUDE.md and AGENTS.md are earshot's as of that commit, status lines and all.
-- **Provisional hand copies:** `source/StoatworksAbout*.h` (guide = "", no user guide) and
-  `ATTRIBUTIONS.md`. Once the project is registered in stoatworks-backend, `sync-about.py`
-  and `sync-attributions.py` generate them; edit them there then.
+- **Generated, never edited here:** `source/StoatworksAbout.h` (stoatworks-backend's
+  `sync-about.py`, from the website's projects.json), `ATTRIBUTIONS.md` (`sync-attributions.py`,
+  from the backend's `attributions/derived.json`), `.github/FUNDING.yml` and
+  `.github/ISSUE_TEMPLATE/` (the fleet's syncs). Change them there and re-sync. The About block
+  has the User guide button, so each plugin declares 22 parameters.
 - **CI** (`.github/workflows/ci.yml`): macOS builds arm64 with the tools and runs `--list`,
   `--offline` and `glslc`; Windows builds both DLLs with MSVC and loads each as a host does
   (`tools/wincheck.ps1`, whose `-Params` changes whenever a control or the About block does).

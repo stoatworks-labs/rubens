@@ -114,9 +114,9 @@ jobs:
         # pwsh checks only the LAST exit code of a step: each is checked here.
         # -Params changes whenever a control or the About block does.
         run: |
-          ./tools/wincheck.ps1 -Dll "build/Release/Rubens.dll" -Name "SW Rubens" -Id RU01 -Kind source -Params 21 -First "Audio Input"
+          ./tools/wincheck.ps1 -Dll "build/Release/Rubens.dll" -Name "SW Rubens" -Id RU01 -Kind source -Params 22 -First "Audio Input"
           if( $LASTEXITCODE ) { exit $LASTEXITCODE }
-          ./tools/wincheck.ps1 -Dll "build/Release/Rubens Over.dll" -Name "SW Rubens Over" -Id RU02 -Kind effect -Params 21 -First "Audio Input"
+          ./tools/wincheck.ps1 -Dll "build/Release/Rubens Over.dll" -Name "SW Rubens Over" -Id RU02 -Kind effect -Params 22 -First "Audio Input"
           if( $LASTEXITCODE ) { exit $LASTEXITCODE }
 
       - uses: actions/upload-artifact@v7

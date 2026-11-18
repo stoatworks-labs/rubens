@@ -2,7 +2,7 @@
     What a host sees of a built Windows DLL, with no GL and no Resolume.
 
         tools/wincheck.ps1 -Dll build/Release/Rubens.dll -Name "SW Rubens" `
-                           -Id RU01 -Kind source -Params 21 -First "Audio Input"
+                           -Id RU01 -Kind source -Params 22 -First "Audio Input"
 
     It LOADS the DLL (so a missing runtime or dependency fails here, where
     dumpbin cannot see it), finds plugMain, and asks it what Resolume asks
