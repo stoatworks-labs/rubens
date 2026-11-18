@@ -23,8 +23,9 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
 - Configure: `cmake -B build -DCMAKE_BUILD_TYPE=Release`
 - Fast dev build: add `-DCMAKE_OSX_ARCHITECTURES=arm64`
 - Build: `cmake --build build -j8`
-- Install to Resolume: `cmake --install build`. Never from a shared session on this Mac:
-  nothing here has been loaded into Arena.
+- Install to Resolume: `cmake --install build`. Never from a shared session on this Mac: Allan
+  may be using Arena. The release check loaded the CI's bundles once, under the `arena-mac`
+  lock, and took them out again.
 - Render offline: `./build/rutest --out /tmp/r.png` (the source at its defaults, fed the
   harness's track through earshot's `feed()`, 3 s in); `--over` for the Over on the harness's
   card, `--clip F` (raw RGBA at `--size`) for your own. The summary gives the holes, modes,

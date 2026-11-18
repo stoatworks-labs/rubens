@@ -12,9 +12,13 @@ where this repo departs from it).
 Silicon, macOS 26) against a fresh universal Release build: every check at 1280x720 and
 320x180, five on Apple's software renderer, `--offline` with no GL context, the pipe for both
 plugins, 13 of 13 negative controls, 25 of 25 mutants, 14 of 14 controls alive in the sweep
-for each plugin, oxbow reading and rendering both bundles with devices disabled. **Never
-loaded into Resolume; no live audio device ever opened**, by rubens or by earshot. Never built
-on Windows before its CI. earshot is a snapshot of `github.com/stoatworks-labs/earshot` at
+for each plugin, oxbow reading and rendering both bundles with devices disabled. **In Resolume
+only briefly** (2026-11-18): the fleet's Arena gate on win-lab (Arena 7.27.1, llvmpipe, no sound
+device) passed 15 of 15 with 4 skipped, and Arena 7.29.0 on this Mac, driven over REST in a new
+composition, registered both, showed every control, kept a half-transparent clip's alpha right
+in the Over, and got Resolume's sound analysis as silence with a demo clip playing below (README,
+"In Resolume"). **No live audio device ever opened**, by rubens or by earshot; Audio Input stayed
+on None (host FFT). Windows builds come from CI (MSVC). earshot is a snapshot of `github.com/stoatworks-labs/earshot` at
 `8124191`, unpatched.
 
 ## The idea
@@ -406,9 +410,12 @@ variants (SW Rubens and SW Rubens Over on one page, `?plugin=over` for the Over)
   "Volume 130 dB" (16.2-19.8) are the right way up, chosen with rutest; Gas 100 and 300 Pa and
   Volume 120 and 125 dB barely move the flames. A line under the picture says so, and the
   status line reports which way round the last two seconds were. No default was changed.
-- **Photosensitivity.** The page says at the top that the flames jump with the music's beats
-  and that the measured figures are in the user guide, and that Silence or Pause stops it. No
-  default was changed for it, and there is no open-paused rule. Embed mode (`?embed=1`) does
+- **Photosensitivity.** The page's note at the top gives the measured figures: at the defaults
+  the page's own track measures 8 in xenon's flash check (over the line in a third of the
+  picture, 2 over the whole frame), both presets 0, and the results on Resolume's demo clips;
+  it names the presets, Silence and Pause as the way out and links the guide's "Flashing, and
+  keeping it safe". No default was changed for it, and there is no open-paused rule: the page
+  opens playing the track at the defaults. Embed mode (`?embed=1`) does
   not show the note.
 - **Checked by `tools/verify.sh`** ("Browser demo's copies", `demo/tools/check_shaders.py`):
   the five GLSL pieces character for character and the order InitGL and `Assemble()` join them

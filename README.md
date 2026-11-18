@@ -1,8 +1,9 @@
 # rubens
 
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
-> (Anthropic), directed and reviewed by a human author. **It has never been loaded into
-> Resolume, and it has never opened a live audio device.** What's established is established
+> (Anthropic), directed and reviewed by a human author. It has run in Resolume only briefly,
+> in Arena 7.27.1 on Windows (software rendering, no sound device) and Arena 7.29.0 on a Mac,
+> and **never in a show**; **it has never opened a live audio device**. Everything else below is established
 > by an offline harness, `rutest`, that drives the real plugin class through the same
 > `ProcessOpenGL` a host calls, in a headless GL context on a synthetic clock, on this Mac's GPU
 > at two rasters, and feeds it audio through the same earshot `feed()` path a device would use.
@@ -17,6 +18,16 @@
 > models and **25** one-character mutants of the shipped code are all caught. What the flames
 > and the hot air above them look like is **chosen**, not measured, and no source gives a
 > working tube's gas pressure or sound level: see [Status](#status).
+
+> **Photosensitivity warning.** The flames jump with the music, and at the defaults the kicks
+> flare them. With loud music that is **more than three flashes a second** in part of the
+> picture, the line broadcast and web guidance draw: through SW Rubens Over at the defaults,
+> 2 of Resolume's 33 demo clips went over on their own raw stems, **24 of 33** with the same
+> music mastered to an ordinary release level (about −11 dBFS RMS) and all 33 with a louder
+> master, up to 12 rises and falls in a second in a third of the picture where the line is
+> six. **Gas 30 Pa** or **Volume 130 dB** brought every clip back under it. The whole picture
+> never went over at the defaults. The row of evenly spaced flames is also a regular pattern.
+> See [Flashing](#flashing) and the user guide before you put it in front of an audience.
 
 Rubens' flame tube for [Resolume](https://resolume.com) Arena and Avenue, as a pair of FFGL
 plugins: **SW Rubens**, a source, and **SW Rubens Over**, an effect in which your clip is seen
@@ -142,9 +153,49 @@ and their music, where 3 Pa and 145 dB make the kicks flare the flames by 70–8
 
 ## Status
 
-**v0.1.0, 2026-11-16; public from 2026-11-18.** Built and verified offline on one Mac (Apple Silicon);
-never loaded into Resolume, never run against a real audio device, never built on Windows.
-No OpenFX port and no browser demo.
+**v0.1.0, and early days.** It has run in Resolume only briefly, in Arena on Windows and
+on a Mac (below), never in a show, and it has never opened a live audio device: every sound it
+has heard was fed to it. `oxbow probe` reads the bundles as a host does (`SW Rubens` / `RU01` /
+source, `SW Rubens Over` / `RU02` / effect) and `oxbow selftest` renders through each. On Windows
+both DLLs build under MSVC in CI and load as a host loads them (`tools/wincheck.ps1`: name, id,
+type, 22 parameters each). The [user guide](docs/USER-GUIDE.md) is also on the
+[project page](https://stoatworks-labs.com/software/rubens/guide/), and there's a
+[browser demo](https://rubens-demo.stoatworks-labs.com). No OpenFX port.
+
+### In Resolume
+
+**On macOS**, in Arena 7.29.0 on an Apple Silicon Mac (macOS 26), with the release workflow's
+universal bundles (signed ad hoc), driven over Arena's REST API in a new composition of its own:
+both register (`SW Rubens`, RU01, a source; `SW Rubens Over`, RU02, an effect), with all 22 and
+23 parameters shown (the Over's after Arena's own Opacity) and every default as declared. Audio
+Input listed "None (host FFT)", "System default" and the inputs by name and stayed on None (host
+FFT), so no device was opened, and the lamp was amber. With nothing playing and Shimmer at 0, two
+snapshots 1.5 s apart are identical; Mix 0 is identical to the bare clip. Length, Hole Pitch,
+Flame, Distance, Field Width, Tube Height, Exposure, Shimmer and Mix change the picture in the
+Over, and the same and Backdrop in the source; with no sound Volume, Gas, Channel and FFT Law
+change nothing, as they shouldn't, and Hole Size changes it by a hundredth of a level. Setting
+the source's controls back gives the first picture again, identical. **The Over's alpha:** over a
+test clip whose left third is opaque, middle third white at 50% alpha and right third
+transparent, on a blue layer, with Distance at 0 every third above the flames is identical to
+the bare clip, the half-transparent band included, and the tube and flames stand solid over the
+transparent third: Arena's premultiplied input and the Over's premultiplied output agree.
+**Resolume's sound analysis never reached it there.** With Resolume's `Beat 001.mov` playing on
+the layer below (its picture moving), the flames held their quiet height in every snapshot, at
+Volume 145 and 150 dB and with FFT Law on Linear Mag and Log Mag; woofer's check on the same
+Arena that day saw the same. Why isn't known, and the Mac's audio settings weren't looked at or
+changed. Arena's clock reached the plugin in milliseconds, its log has no error from either
+plugin, and no microphone prompt appeared.
+
+**On Windows**, in Arena 7.27.1 on win-lab (software rendering, Mesa llvmpipe, no GPU and no
+sound device), with the x64 DLLs the release workflow built from this source, the fleet's Arena
+gate passed 15 of 15 with 4 skipped: both load and register (`SW Rubens`, RU01, a source; `SW
+Rubens Over`, RU02, an effect), list in Arena's source and effect browsers with all 22 and 23
+parameters as declared (the Over's after Arena's own Opacity; name, order, type, range and
+default), and render. With Shimmer at 0 to hold the flames still, 9 of the source's controls
+and 10 of the Over's (Arena's Opacity among them) move the picture. The seven that need sound
+(Audio Input, Channel, FFT Law, Volume, Hole Size, Gas and the Audio buffer) weren't tried, as
+that machine has none; Rescan Inputs wasn't pressed. Arena's log is clean and it stayed up
+throughout.
 
 ### Measured offline, on macOS
 
@@ -184,24 +235,85 @@ No OpenFX port and no browser demo.
   frame)**, 2.28 ms at 4K, 0.72–1.39 ms at 720p; the Over 0.59–0.61, 2.37–2.39 and 0.48–0.80
   ms. 720p is the noisy one, and reading above 1080p is the shared GPU's clock, not the
   shaders. Wall time per frame, the duct and earshot included: 1.5–2.4 ms at 720p and 1080p,
-  3.5–3.7 ms at 4K. The duct alone: 7.5–7.7 ms per second of audio.
+  3.5–3.7 ms at 4K. The duct alone: 7.5–7.7 ms per second of audio. Re-measured on the released
+  tree on 2026-11-18: the source 0.57 ms at 1080p, 2.28 ms at 4K; the Over 0.59 and 2.38 ms;
+  the duct 7.57 ms per second of audio.
+
+### Flashing
+
+Measured from the plugins' own output with xenon's flash check (a rise or fall of a tenth of
+white, counted over the whole picture and over every third-of-the-picture patch, in linear
+light; more than six in a second is over the line), 60 fps, 7.5 s each, fed through earshot's
+`feed()`. The music is Resolume's own demo stems as they come (layered, about −20 dBFS RMS),
+the same stems layered and mastered to about −11 dBFS RMS, and limited to about −9.5.
+
+- **The Over at its defaults, over all 33 demo clips:** with each clip's own audio (an AV
+  clip's stem, the layered stems for a silent one) 2 of 33 over, at 7 and 8 (those two clips
+  measure 4 and 5 bare); mastered, 24 of 33 (up to 11); loud, 33 of 33 (up to 12). The plugin
+  raised 23 of the 33 clips' own rate.
+- **The source at its defaults:** the 18 raw stems 0 over (worst 6), the 6 raw layered mixes
+  1 over (7); mastered 4 of 6 (up to 11), loud 6 of 6 (up to 12). `rutest`'s own track, which
+  the browser demo plays: 8. The whole picture never went over at the defaults (6 at most).
+- **Turning things up, the Over over the raw stems:** Volume 150 dB, 8 of 33 over (up to 10);
+  Gas 1 Pa, 18 (10); Flame 30 cm, 8 (10); Exposure +4 stops, 13 (11); Field Width 0.5 m, 12 (10);
+  all of those at once, 11 (12). Shimmer 1 changes nothing. With the loud master, Gas 1 Pa,
+  Flame 30 cm and Field Width 0.5 m take the whole picture over too (7).
+- **What brings it back:** Gas 30 Pa, or Volume 130 dB. Either kept all 33 clips under with
+  the mastered and the loud music (worst 6, from a clip that measures 6 bare), and the source
+  over those 12 mixes at 2. One at a time on the source with those mixes: Volume 135 dB, 6;
+  Gas 10 Pa, 7; Gas 100 Pa, 0; Flame 5 cm, 2; Field Width 6 m, 5. Exposure −2 stops still
+  measured 8, and the Black backdrop is no better than Grid.
+
+No default was changed for this. The flash check counts flashes only: the row of flames is also
+a regular pattern, 69 evenly spaced stripes across about a quarter of the picture at the
+defaults (80% of it at Field Width 0.5 m), and the Grid backdrop is a faint grid over the whole
+frame (4% of white at most), which broadcast guidance (ITU-R BT.1702, Ofcom) also counts. The
+user guide's "Flashing, and keeping it safe" has the table.
 
 ### Not established
 
-- Whether a real Rubens tube burns like this at these settings. No source read gives an
-  absolute gas overpressure, flow rate or sound level for a working tube, so Gas and Volume are
-  calibrated against nothing; the default 3 Pa is low.
-- Ficken & Stephenson 1979 itself (paywalled): everything about the reversal is through Gee and
-  Gardner, Gee & Dix, who both call it not fully explained. The crossover at a\* = 4.33 is a
-  property of the √Δp, outward-only model, labelled derived; swing = overpressure is where
-  gulping starts, not where the flames flare.
+- **Which way up the defaults are.** At Gas 3 Pa and Volume 145 dB loud music is in the
+  reversal: the antinodes flare. The pattern is upside down against the textbook's, where the
+  flames are lowest where the pressure swings most. The textbook picture needs Gas in the tens
+  of pascals or a quieter Volume. The defaults were set on Resolume's demo clips because they
+  move; neither way is anchored.
+- **Gas and Volume are anchored to no source.** No source read gives an absolute gas
+  overpressure, flow rate or sound level for a working tube, so both are calibrated against
+  nothing; the default 3 Pa is low.
+- **Whether Flame should follow Gas.** Flame is the quiet height at whatever the Gas is, so Gas
+  moves the dip-to-flare balance without relighting the stage; a real tube's quiet flames grow
+  with the gas pressure.
+- **The Over's alpha.** Arena hands an effect premultiplied input, and the Over assumes
+  premultiplied input and gives premultiplied output, which match. In Arena 7.29.0 on a Mac a
+  half-transparent band of a test clip came through the Over unchanged and the tube and flames
+  stood solid over a transparent one; a clip with soft edges in a show hasn't been tried.
+- **Whether the modes should run past the 2.78 kHz cut-on.** The modes stop below the pipe's
+  first cross-mode for the default tube (2.75 kHz is the last). A loudspeaker driving the pipe
+  evenly can't excite that one, so the plane-wave modes could run on to the first one it can
+  (5.8 kHz); stopping early is conservative.
+- **A pitch-driven plunger.** Some tubes are tuned by an adjustable end. That would be a second
+  mechanism, not in this one.
+- **Ficken & Stephenson 1979 is known only second-hand** (paywalled): everything about the
+  reversal is through Gee and Gardner, Gee & Dix, who both call it not fully explained. The
+  crossover at a\* = 4.33 is a property of the √Δp, outward-only model, labelled derived;
+  swing = overpressure is where gulping starts, not where the flames flare.
 - The flames' shape and colour, the plume's growth and the shimmer are looks. The flame's
   50 ms response to its fuel is an assumption.
 - Not modelled: the jets' nonlinear resistance feeding back into the duct, temperature along
   the tube, the loudspeaker's own impedance, holes over part of the tube, air drawn in changing
   the gas, flames going out.
-- Resolume's FFT bins are unmeasured: the fallback's level depends on FFT Law.
-- Windows: never built.
+- **Resolume's FFT is unmeasured:** the fallback's level depends on FFT Law, and its bands can
+  read above full scale (they are clipped). In Arena 7.29.0 on a Mac the analysis reached the
+  plugin as silence with a demo clip playing on the layer below, so the fallback has never been
+  seen moving the flames inside Resolume.
+- **Audio inputs, from earshot's behaviour as this snapshot has it:** with no input chosen the
+  lamp is amber, which is normal; a device that has gone stays missing (blinking red) until it
+  is back or another is chosen; and an open input that delivers exact zeros for 3 s turns the
+  lamp steady red. None of these has been seen with a real device.
+- **The inspector shows slider positions**, not decibels or metres: the user guide gives each
+  range and the middle of each slider.
+- **Resolume in a show.** Run in Arena only briefly, never in a composition of several layers,
+  at 4K, on a GPU under Windows, or through a show; its cost was measured only offline.
 
 ## Browser demo
 
@@ -218,7 +330,9 @@ same settings and audio to one 8-bit code in seven cases at Shimmer 0 (the shimm
 fallback do not match, and [AGENTS.md](AGENTS.md#browser-demo) says why). At the defaults the
 flames flare with loud music rather than dip, and the page says so and offers the presets that
 turn it the right way up; the flames jump with the beats, and the page says that at the top. It
-is a demo, not the plugin, and the page lists what it leaves out.
+is a demo, not the plugin, and the page lists what it leaves out. Its track at the defaults
+measures 8 in the flash check (over the line in a third of the picture); its Gas 30 Pa and
+Volume 130 dB presets measure 0.
 
 ## Build
 
@@ -244,7 +358,8 @@ The last one copies `Rubens.bundle` and `Rubens Over.bundle` into
 `~/Documents/Resolume Arena/Extra Effects`. Restart Arena: **SW Rubens** is under Sources and
 **SW Rubens Over** under Effects.
 
-Windows needs Visual Studio 2022 and vcpkg (for GLEW). It has never been built.
+Windows needs Visual Studio 2022 and vcpkg (for GLEW); CI builds it on GitHub's Windows runner
+(`.github/workflows/ci.yml`), and the release installer and zip come from `release.yml`.
 
 ## Building and testing
 
