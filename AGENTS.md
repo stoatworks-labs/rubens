@@ -342,3 +342,142 @@ covers them.
 5. **A pitch-driven end plunger** (Waetzmann's adjustable tubes) would be a second mechanism,
    not this one. Left out.
 6. ~~**CI**~~: settled when the repo went public (2026-11-18): `ci.yml` and `release.yml`.
+
+## Browser demo
+
+https://rubens-demo.stoatworks-labs.com/ (2026-11-18), from `demo/`, deployed by
+`wrangler.toml` (a Worker route: the zone is at Cloudflare's 100 custom domains, so
+`rubens-demo` is a proxied AAAA `100::` record made through the API) and
+`.github/workflows/deploy.yml` on every push to main. woofer's pattern, with mirrorball's two
+variants (SW Rubens and SW Rubens Over on one page, `?plugin=over` for the Over).
+
+- **It runs the plugin, it doesn't port it.** `demo/rubens-core.wasm` is `Rubens.cpp` and
+  everything it calls (Diag, Controls, Duct, Audio, PassBuffer, Shaders), earshot's snapshot
+  (every `src/*.cpp` but `Miniaudio.cpp`/`MiniaudioImpl.cpp`, with `NoCapture.cpp`: its own
+  `EARSHOT_CAPTURE=OFF` build, so the module has no device backend at all) and the FFGL SDK's
+  plugin classes, FFGLLog, FFGLShader, FFGLFBO, the screen quad, the scoped bindings and
+  FFGLUtilities, compiled unmodified by emscripten (`demo/tools/build-wasm.sh`). The duct, the
+  holes' jets, the flames, the fallback and earshot's resampler and tap are that C++. Left out:
+  `SourcePlugin.cpp` and `EffectPlugin.cpp` (the registrations; the glue constructs
+  `RubensPlugin(false/true)` itself). The script fails if a `source/*.cpp` or an earshot
+  `src/*.cpp` it doesn't list appears.
+- **What is the page's**: `demo/wasm/glue.cpp` plays the host (constructs either plugin, reads
+  its declarations back through the SDK so the panel is built from them, forwards
+  SetFloatParameter, SetTime, the Audio buffer's elements and ProcessOpenGL as rutest's rig
+  does, and hands the page the harness's accessors: holes, pitch, modes, f_H, cut-on, the
+  flames' min/max/mean and each one, v0, tap samples a frame, earshot's state, the plugin's
+  clock); `demo/wasm/gl_shim.cpp` takes five entry points: glShaderSource (refusing any text
+  that isn't byte for byte one of the page's four assemblies of `demo/shaders.js`, then the
+  kit's `port()`), glEnable/glDisable/glIsEnabled (GL_PROGRAM_POINT_SIZE, which WebGL2 lacks)
+  and glTexImage2D (see the traps); the host row; the read-outs' units, tooltips, the nine
+  presets (in dB, metres, pascals and stops, through the plugin's own inverses via
+  `ru_param_from`), the regime line, the status line and Diag's log from emscripten's memory
+  file system (`RUBENS_LOG_DIR=/rubens/logs`). Off the panel: Audio Input, Rescan Inputs, the
+  Audio buffer and the About block (the panel's note says so). Channel and FFT Law stay on it,
+  with tooltips saying when each acts (a stereo file whose channels differ; "None (host FFT)").
+- **The audio, never a device.** The page never calls a device API (`check_shaders.py` fails if
+  a served file names getUserMedia, enumerateDevices or mediaDevices), the module cannot open
+  one, and `ru_prepare` sets `RUBENS_NO_DEVICES=1` so `AudioInput::Refresh` never asks. The
+  page never sends Audio Input either: SetFloatParameter on it calls `audio.Select`, which ends
+  a feed. The host row's choices are rutest's: the track (`musicAt` and its five helpers copied
+  from `tools/rutest/main.cpp` into the glue, held character for character by
+  `check_shaders.py`, with kFeedRate and the `--host-fft` loop's lines), `--silent` (earshot
+  goes Silent after 3 s, the lamp steady red) and `--host-fft` (nothing fed; the fallback on
+  the synthetic spectrum, the lamp amber); plus a file of the visitor's, decoded by
+  `decodeAudioData` in an `OfflineAudioContext` at 48 kHz (no output device), mono to both
+  channels, fed through `ru_feed` and looped (rutest --wav plays once). Each frame feeds the
+  samples up to the page's clock × 48 000. Nothing is played aloud. Every change of audio or
+  of plugin is a new instance from time 0 (a feed lasts until a select, which nothing here
+  calls), and the page's default is the track where the plugin's own is "None (host FFT)".
+- **The clock.** The page sends seconds from frame deltas (capped at 0.1 s). Each new instance
+  (load, a change of plugin or audio, Restart) is primed with five frames about a millisecond
+  apart so the plugin's seconds-or-milliseconds vote settles before the first frame shown
+  (mirrorball's fix): nothing is fed during them, so the flames start from rest and a paused
+  page stands still. Until the vote settles the plugin's clock is the wall clock, and the
+  shimmer's clock is the sum of its frame steps, so each instance's shimmer starts 3-4 ms on,
+  never the same twice: two Restarts at the defaults differ in the plumes' noise (18,587 bytes
+  at 640×360, up to 218 codes); at Shimmer 0 they are identical. rutest presets its clock and
+  never takes those steps. On the host-FFT choice the fallback's band noise runs on the same
+  clock.
+- **The regime, said plainly.** At the defaults (Gas 3 Pa, Volume 145 dB) loud music flares the
+  flames where the pressure swings most (rutest, 320×180, 330 frames of the track: 13.5-28.1 cm
+  against a quiet 20; the page's frame at 5.5 s gives the same 13.45-28.11), the reversal
+  Ficken & Stephenson reported as [Gee] relates it. The presets "Gas 30 Pa" (16.6-19.5 cm) and
+  "Volume 130 dB" (16.2-19.8) are the right way up, chosen with rutest; Gas 100 and 300 Pa and
+  Volume 120 and 125 dB barely move the flames. A line under the picture says so, and the
+  status line reports which way round the last two seconds were. No default was changed.
+- **Photosensitivity.** The page says at the top that the flames jump with the music's beats
+  and that the measured figures are in the user guide, and that Silence or Pause stops it. No
+  default was changed for it, and there is no open-paused rule. Embed mode (`?embed=1`) does
+  not show the note.
+- **Checked by `tools/verify.sh`** ("Browser demo's copies", `demo/tools/check_shaders.py`):
+  the five GLSL pieces character for character and the order InitGL and `Assemble()` join them
+  in for the four stages; every uniform set by the setter its type takes and nothing undeclared
+  set (plume 14 by 14 calls, composite 21 by 22: MaxUV is set twice; `geometryUniforms( shader,
+  ... )`'s calls are counted for each shader that calls it); rutest's track and host-FFT lines
+  in the glue; no served file naming a device API; the hashes of every input the .wasm was
+  built from (`demo/wasm/inputs.sha256`, 64 files) and the SDK pin. Any change under `source/`
+  or `external/earshot/` needs `demo/tools/build-wasm.sh` rerun and its outputs committed (mode
+  644).
+- **Compared with rutest, once (2026-11-18), by `demo/tools/crosscheck.py`** (in the repo;
+  nothing runs it by itself: it needs Chrome, cdpshot and a built rutest). Headless Chrome on
+  the real GPU (ANGLE on Metal), the page paused, the settings applied, Restart, then N presses
+  of Step (800 N samples fed, the clock at N/60); for the Over, Mix 0 hands the clip back so the
+  canvas is the exact input frame; `rutest --pipe --fps 60 [--over]` gets that frame (black for
+  the source) N times with the same host values, and its last frame is compared. Apple M4 Max,
+  640×360 (691,200 colour values a case):
+
+  | case | clip | N | colour values off | max |
+  | --- | --- | --- | --- | --- |
+  | source, Shimmer 0, the track | scene | 330 | 11 | 1 code |
+  | Over, Shimmer 0 | scene | 240 | 1,668 | 1 code |
+  | source, Gas 30 Pa, Dots, Shimmer 0 | scene | 300 | 3 | 1 code |
+  | Over, 130 dB, Distance 15 m, Mix 50%, Shimmer 0 | bars | 200 | 18 | 1 code |
+  | source, 3 m tube, 0.5 mm holes, Black, +1 stop, Shimmer 0 | scene | 260 | 0 | 0 |
+  | Over, shape on transparency, Field 0.8 m, Tube Height 0.3, Shimmer 0 | alpha | 180 | 1,610 | 1 code |
+  | source, silence, Shimmer 0 | scene | 120 | 5 | 1 code |
+  | source, the defaults, Shimmer 0.5 (reported, not judged) | scene | 330 | 66,463 | 195 codes |
+  | source, None (host FFT), Shimmer 0 (reported, not judged) | scene | 120 | 99,761 | 201 codes |
+
+  Alpha identical but for one code on the alpha clip. The negative control (rutest with Gas one
+  slider step, 0.001, off on the first case) puts 33,363 values off, up to 199 codes. So on the
+  feed path the wasm duct lands on the Mac's to within the GPU's last code, and the page's
+  flames on the first case (13.45-28.11 cm) are rutest's (13.5-28.1). The two unjudged cases differ for the clock reason above.
+- **Also checked on the page** (CDP, the real GPU): the defaults read back as the plugin's
+  (L+R, Linear Mag, 145.0 dB, 1.524 m, 2.20 cm, 0.92 mm, 3.00 Pa, 20.0 cm, 0.50, 6.0 m, 1.90 m,
+  20% up, 0.00 stops, Grid; the Over has Mix 100% in place of Backdrop); the flames move with
+  the track (the tallest swinging between about 19 and 64 cm a few times a second at the defaults), the
+  lamp is green on the feed, steady red on zeros, amber on the host FFT; Flame changes the
+  picture paused, Gas changes it playing (the negative control above; paused it cannot, since
+  the flames follow the samples fed); a WAV chosen through the file input decodes and drives
+  the flames; all nine presets render on both plugins with no GL error, and a Restart after
+  "No shimmer" gives the same first frame before and after another preset; the Plugin menu
+  starts a new instance from time 0 at that plugin's defaults; Copy link carries
+  `plugin=over`; all four stages the compiled plugin handed to glShaderSource were the page's
+  (none refused); no horizontal scroll at 390 px; no console errors.
+- **Every gap, as the page discloses it** (banner, the panel's note, the host row's tooltips,
+  the "does not reproduce" list): it runs the plugin, not a port, and the units, tooltips and
+  presets are the page's; no audio device or microphone, earshot built without capture, Audio
+  Input, Rescan Inputs and the Audio buffer off the panel, the live-device path absent; the
+  audio is the harness's track or a file decoded, resampled to 48 kHz and looped in the page,
+  never played aloud; Channel acts only on a stereo file, FFT Law only on the host FFT; "None
+  (host FFT)" runs on a synthetic spectrum, not a real FFT, and is uncalibrated; every change of
+  audio or plugin is a new instance from time 0, and the page's default audio is not the
+  plugin's; the defaults flare rather than dip; GL is emscripten's WebGL2 with five shimmed
+  entry points and the kit's GLSL port; the clock is the page's and primed, the shimmer carries
+  the prime, and a paused control move feeds nothing; a frame is a display refresh (the feed
+  path does not depend on it, the fallback does); WebAssembly has no fused multiply-add and
+  musl's libm; the Over's clip is the kit's, premultiplied, its whole texture; the warning is
+  the page's; the About block is off the panel; nothing is measured, and the plugin has never
+  been in Resolume or opened a device.
+- **Traps hit**: the FFGL SDK's FFGLFBO allocates the R32F plume with a `GL_RGBA` client format
+  and no data, which desktop GL takes and WebGL2 refuses (OpenGL ES 3.0 pairs R32F only with
+  `GL_RED`/`GL_FLOAT`), so the shim's glTexImage2D gives R32F `GL_RED` when there is no
+  data, passes the hole table's RGBA32F upload through, and aborts on anything else;
+  `needFloat` makes the kit enable EXT_color_buffer_float or refuse to start, since R32F is a
+  render target. Rubens.cpp sets its geometry uniforms in a helper that takes the shader as a
+  parameter, so the uniform check expands that helper into each caller. A paused Gas move
+  changes nothing on screen (the jets act on samples as they are fed), which looks like a dead
+  control and is not: Flame, which sets the quiet height directly, does change a paused frame.
+  The kit's Composition select is blank with `?size=` (not one of its presets), which is the
+  kit's, not a fault.

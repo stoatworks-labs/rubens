@@ -40,6 +40,9 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
   A partial last frame is dropped (said on stderr); a reader that hangs up ends it with exit
   1, not SIGPIPE's 141. How far a WAV moves the flames: `--out` with `--wav` prints it.
 - The harness's track as a WAV: `./build/rutest --write-wav t.wav 4`
+- Browser demo (`demo/`, AGENTS.md "Browser demo"): after ANY change under `source/` or
+  `external/earshot/` rerun `demo/tools/build-wasm.sh` and commit its outputs, and after a
+  shader change `demo/tools/check_shaders.py --write`; verify.sh fails until you do.
 
 ## Verify
 - Everything: `OXBOW=/path/to/oxbow tools/verify.sh` under bash (GLSL reserved words and

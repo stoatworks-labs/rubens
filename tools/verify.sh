@@ -63,8 +63,8 @@ reserved_words || fail "a GLSL reserved word is used as an identifier"
 step "GLSL: nothing WebGL2 lacks"
 #---------------------------------------------------------------------------
 # The fleet's browser demos run the shaders unedited in WebGL2 (GLSL ES 3.00),
-# and the kit's port() translates spellings, never maths. Rubens has no demo yet;
-# the rule is kept so one can be made without rewriting a shader. These
+# and the kit's port() translates spellings, never maths. Rubens' does (demo/),
+# and this rule keeps it possible without rewriting a shader. These
 # built-ins arrived in GLSL 4.00 / ES 3.10 and compile everywhere here but
 # there: findMSB was in ferrofluid's panel shader until 2026-10-06.
 if grep -nE '(^|[^A-Za-z_])(findMSB|findLSB|bitCount|bitfieldExtract|bitfieldInsert|bitfieldReverse|uaddCarry|usubBorrow|umulExtended|imulExtended|frexp|ldexp|fma|textureGather|textureQueryLevels|packUnorm4x8|unpackUnorm4x8)[[:space:]]*\(' source/Shaders.cpp | grep -vE '^[0-9]+:[[:space:]]*//' ; then
@@ -76,6 +76,17 @@ echo "   none"
 step "Shaders"
 #---------------------------------------------------------------------------
 tools/glslc.sh || fail "a shader does not compile"
+
+#---------------------------------------------------------------------------
+step "Browser demo's copies"
+#---------------------------------------------------------------------------
+# demo/shaders.js must be source/Shaders.cpp's GLSL character for character,
+# with the order InitGL and Assemble() join it in; every uniform must be set by
+# the setter its type takes (WebGL2 drops a wrong one silently); the glue's
+# track and host-FFT lines must be rutest's; no served file may name a device
+# API; and the .wasm's recorded inputs must still hash as they did when
+# demo/tools/build-wasm.sh built it (rebuilding needs emscripten).
+python3 demo/tools/check_shaders.py || fail "the demo's copies have drifted from the plugin's"
 
 #---------------------------------------------------------------------------
 step "Submodule"

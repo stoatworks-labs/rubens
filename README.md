@@ -203,6 +203,23 @@ No OpenFX port and no browser demo.
 - Resolume's FFT bins are unmeasured: the fallback's level depends on FFT Law.
 - Windows: never built.
 
+## Browser demo
+
+[rubens-demo.stoatworks-labs.com](https://rubens-demo.stoatworks-labs.com/) runs both plugins
+in your browser: their own C++, the plugin class with the duct and its holes integrated in
+double at 16 kHz, its audio input and earshot under it, compiled unmodified to WebAssembly and
+drawing with its own GLSL in WebGL2. The page is the host, and it never opens or lists an audio
+device or asks for a microphone. It feeds the plugin through earshot's `feed()` as `rutest`
+does: `rutest`'s own track, silence, or an audio file of yours decoded in the page and never
+uploaded; or nothing at all, with `rutest --host-fft`'s made-up kick spectrum in the Audio
+buffer for the plugin's own fallback. Audio Input, Rescan Inputs and the live-device path are
+not in the browser, and nothing is played aloud. A frame of the page matched `rutest`'s on the
+same settings and audio to one 8-bit code in seven cases at Shimmer 0 (the shimmer and the
+fallback do not match, and [AGENTS.md](AGENTS.md#browser-demo) says why). At the defaults the
+flames flare with loud music rather than dip, and the page says so and offers the presets that
+turn it the right way up; the flames jump with the beats, and the page says that at the top. It
+is a demo, not the plugin, and the page lists what it leaves out.
+
 ## Build
 
 macOS (universal: Apple Silicon and Intel):
