@@ -99,9 +99,9 @@ pin="$(git -C external/ffgl rev-parse --short=7 HEAD)"
 echo "ok   FFGL SDK pinned at $pin"
 # earshot is a snapshot, not a submodule: the commit it came from and that it
 # is unpatched are written in it, and AGENTS.md repeats both.
-grep -q '^Commit:   8124191 ' external/earshot/SNAPSHOT || fail "external/earshot/SNAPSHOT is not earshot 8124191"
+grep -q '^Commit:   02306da ' external/earshot/SNAPSHOT || fail "external/earshot/SNAPSHOT is not earshot 02306da"
 grep -q '^Patches:  none' external/earshot/SNAPSHOT || fail "external/earshot/SNAPSHOT records a patch: AGENTS.md must say what and why"
-echo "ok   earshot snapshot 8124191, unpatched"
+echo "ok   earshot snapshot 02306da, unpatched"
 
 #---------------------------------------------------------------------------
 step "Build (universal)"
@@ -174,10 +174,11 @@ step "Checks (this Mac's GPU, 1280x720 and 320x180)"
 #---------------------------------------------------------------------------
 # Every claim the README makes, in the order the README makes them. The
 # picture checks (crossover's flames as uploaded, spacing, alpha, refraction)
-# run at both rasters themselves; rates, fallback, device, clock, resize and
-# state measure the duct, the audio or the GL state, not the picture, and run
-# at 320x180. resonance, orifice, offres, names and cues need no GL context.
-CHECKS="resonance orifice offres crossover spacing rates fallback device alpha refraction clock resize state names cues"
+# run at both rasters themselves; rates, fallback, arenafft, device, clock,
+# resize and state measure the duct, the audio or the GL state, not the
+# picture, and run at 320x180. resonance, orifice, offres, names and cues need
+# no GL context.
+CHECKS="resonance orifice offres crossover spacing rates fallback arenafft device alpha refraction clock resize state names cues"
 for check in $CHECKS; do
 	if out=$( "$RUTEST" --$check 2>&1 ); then
 		printf '   ok   rutest --%s: %s checks\n' "$check" "$( printf '%s\n' "$out" | grep -c '^  ok' )"

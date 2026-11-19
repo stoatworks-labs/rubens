@@ -11,7 +11,7 @@ where this repo departs from it).
 `OXBOW=… tools/verify.sh` passes on this Mac (Apple
 Silicon, macOS 26) against a fresh universal Release build: every check at 1280x720 and
 320x180, five on Apple's software renderer, `--offline` with no GL context, the pipe for both
-plugins, 13 of 13 negative controls, 25 of 25 mutants, 14 of 14 controls alive in the sweep
+plugins, 15 of 15 negative controls, 25 of 25 mutants, 14 of 14 controls alive in the sweep
 for each plugin, oxbow reading and rendering both bundles with devices disabled. **In Resolume
 only briefly** (2026-11-18): the fleet's Arena gate on win-lab (Arena 7.27.1, llvmpipe, no sound
 device) passed 15 of 15 with 4 skipped, on a pre-tag build and again on the v0.1.0 zip, and Arena 7.29.0 on this Mac, driven over REST in a new
@@ -20,7 +20,20 @@ in the Over, and, re-tested 2026-11-19 with `Beat 001.wav` below (the first run'
 stream), moved both plugins' flames on Resolume's Composition FFT: the Over's median flame 115 px at rest,
 101 px at the defaults, 82 px at 150 dB (README, "In Resolume"). **No live audio device ever opened**, by rubens or by earshot; Audio Input stayed
 on None (host FFT). Windows builds come from CI (MSVC). earshot is a snapshot of `github.com/stoatworks-labs/earshot` at
-`8124191`, unpatched.
+`02306da`, unpatched.
+
+**v0.1.1, 2026-11-19: Resolume's FFT reaches the lowest band.** In v0.1.0 (earshot `8124191`)
+the 40-160 Hz noise band got no host bin: earshot read Resolume's 64 bins as spread to 22.05 kHz,
+bin j centred at (j + 0.5)/64 of it, and gave each bin whole to the band holding its centre, so
+bin 0 (172 Hz) went to 160-640 Hz. Arena 7.29.0's bins were then measured on this Mac
+(snowglobe's agent, SW Hostprobe; earshot's AGENTS.md, "Resolume's 64 bins, measured"): linear,
+375 Hz a bin, 0-24 kHz (the 48 kHz engine, also for a 44.1 kHz clip), magnitudes, mono
+(L + R)/2, a new spectrum about every 43 ms. earshot `02306da` shares each bin among the bands
+it overlaps and defaults to that law; rubens overrides `SetSampleRate` and hands the rate to
+earshot on the render thread (`AudioInput::SetHostRate`, logged once per change). FFT Law keeps
+its options and its default, Linear Mag, which is the measured law; the Log options stay for
+hosts nobody has measured. `rutest --arenafft` builds Arena's bins from audio and fails 0 of 10
+against `8124191`; two new negative controls (15 in all).
 
 ## The idea
 
@@ -59,7 +72,7 @@ nothing) comes out of that chain.
   `RU02`, effect, `com.stoatworks.ffgl.rubens.over`; harness `rutest`. One OBJECT core, an
   `isEffect` flag (haze's shape). The source has Backdrop and no Mix; the Over has Mix and no
   Backdrop. The About block last.
-- **earshot, snapshotted, not a submodule.** `external/earshot/` is `git archive 8124191` of
+- **earshot, snapshotted, not a submodule.** `external/earshot/` is `git archive 02306da` of
   earshot (`github.com/stoatworks-labs/earshot`), with `SNAPSHOT` saying so and "Patches: none" (verify.sh
   fails if that line changes). Configured with `tapRate = 16000` (the tap's 6.4 kHz cutoff is
   above the duct's 2.78 kHz cut-on, and the duct's cost is per sample), `maxChannels = 2`, four
@@ -106,7 +119,16 @@ nothing) comes out of that chain.
   only when the value changes.
 - **The fallback.** Band-limited noise per band (a deterministic xorshift through a 2-pole
   band-pass, normalised to unit RMS once), its amplitude ramped across the frame from the
-  band's last level to this one, levels clamped to [0, 1].
+  band's last level to this one, levels clamped to [0, 1]. The levels are earshot's host bands:
+  each Resolume bin shared among the bands it overlaps (earshot 0.1.1), so on Arena's 375 Hz
+  bins the 40-160 Hz band is √0.32 of bin 0 and 160-640 Hz √(0.57 b0² + 0.71 b1²). A kick and a
+  bass line both live in bin 0; 64 linear bins cannot tell them apart.
+- **FFT Law (v0.1.1).** Kept, default and ids unchanged: Linear Mag is Arena's measured law;
+  Linear Power and the Log options remain for hosts nobody has measured (in Arena the Log ones
+  read every band from the wrong bins). The host's rate comes from FFGL `SetSampleRate` (an
+  atomic, read on the render thread; the SDK's own `sampleRate` member is uninitialised until
+  the host calls it), 48 kHz until then. FFGL PluginInfo's minor version stays 0, 1: a saved
+  .avc names the plugin by its four-character id.
 - **Volume** is the SPL (dB re 20 µPa, RMS) a full-scale sine would make as a travelling wave
   in propane: v₀ = √2·p_ref·10^(Volume/20)/(ρc). Typed in the harness and checked to 1e-6.
 - **Workflows only once public.** BRIEF.md asks for ci.yml and release.yml; the machine's rule
@@ -225,6 +247,11 @@ build.
 - **The scripted backend delivers on its own thread**: the first frame after Running can have
   read no samples. `--device` (b) waits 30 ms before it renders.
 - **Host band levels are not bounded by 1** (woofer's finding): clamped.
+- **`configure()` takes effect at the next `update()`, and a second `configure()` before it
+  replaces the first** (`config()` is the applied one, not the pending one). v0.1.1's first cut
+  set the host's rate with one configure and FFT Law with another in the same frame, built from
+  `config()`: the law's, the later, carried the old rate, and at 44.1 kHz earshot kept 48 kHz.
+  `--arenafft` caught it. Now `Pull` builds one configure from the law and the rate together.
 - `update()` runs all of earshot's analysis whatever is read; rubens reads only the tap and the
   bands. Its cost is inside the bench's wall time, not measured separately.
 
@@ -251,6 +278,9 @@ One line per check.
 - `--resonance`, `--orifice`, `--offres`: no GL; IEEE double on the CPU; run by `--offline`.
   Tolerances from the model (1e-4 against 1.4e-6; 1e-9 for exact algebra; 5% for [GGD]'s own
   4.4%; 2% for a ring-down over 13 windows).
+- `--arenafft`: CPU state (the fallback's band levels, earshot's rate); the bins are built in
+  double by the harness's own radix-2 FFT. The tone's shares are exact algebra on the bins
+  handed over (1e-4 for float); the loop's margins are 13x against a 4x bound.
 - `--crossover`, `--rates`, `--fallback`: read the flame lengths the plugin uploads (CPU
   state), not the picture. `--rates` is bit-exact anywhere IEEE double is.
 - `--spacing`: the flame heights are light-weighted column means off a flames-only render,
@@ -274,7 +304,7 @@ One line per check.
 
 ## The negative controls and mutants
 
-`rutest --negative`, 13 wrong models, each must fail its check:
+`rutest --negative`, 15 wrong models, each must fail its check:
 
 | check | wrong model |
 | --- | --- |
@@ -287,6 +317,8 @@ One line per check.
 | `--spacing` | the modes without the holes' shunt |
 | `--rates` | the flames follow their fuel once a frame, not once a sample |
 | `--fallback` | the fallback reads the (empty) tap |
+| `--arenafft` | Resolume's bins filed whole under the band holding each one's centre (earshot `8124191`'s rule): the 40-160 Hz band gets none |
+| `--arenafft` | the host's sample rate never reaches earshot |
 | `--device` | menu values are positions, not keys |
 | `--alpha` | the Over's alpha forced to 1 |
 | `--refraction` | the deflection's sign flipped |

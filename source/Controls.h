@@ -93,8 +93,10 @@ enum class Channel
 	Count
 };
 
-/// What Resolume's FFT bins are assumed to be (earshot's HostBins): nobody
-/// has measured them, so the assumption is exposed.
+/// How Resolume's FFT bins are read (earshot's HostBins). Arena 7.29.0's were
+/// measured (earshot's AGENTS.md, "Resolume's 64 bins, measured"): Linear
+/// Mag, the default, 64 bins of the engine's Nyquist (375 Hz each at 48 kHz).
+/// The rest stay for hosts nobody has measured.
 enum class FftLaw
 {
 	LinearMagnitude = 0,

@@ -1151,6 +1151,8 @@ struct Perturb
 	bool fallbackFromTap = false;
 	bool menuByIndex     = false;
 	bool cuesRamp        = false;
+	bool hostCentreOnly  = false;///< earshot 8124191's rule for the host bins
+	bool ignoreHostRate  = false;///< the host's sample rate never reaches earshot
 };
 
 using CheckFn = int ( * )( const Perturb& );

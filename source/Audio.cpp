@@ -197,17 +197,43 @@ void AudioInput::Feed( const float* interleaved, int frames, int rate, int chann
 	engine->feed( interleaved, frames );
 }
 
+void AudioInput::SetHostRate( unsigned int rate )
+{
+	if( rate < 8000 || rate > 768000 || rate == hostRate )
+		return;
+	hostRate  = rate;
+	hostDirty = true;
+	diag::info( "host audio at " + std::to_string( rate ) + " Hz: Resolume's FFT bins read to " + std::to_string( rate / 2u ) + " Hz ("
+	            + std::to_string( rate / 128u ) + " Hz each under Linear)" );
+}
+
+double AudioInput::HostRateForTest() const
+{
+	return engine->config().hostBins.sampleRate;
+}
+
+double AudioInput::FallbackLevelForTest( int b ) const
+{
+	return b >= 0 && b < static_cast< int >( bands.size() ) ? bands[ static_cast< size_t >( b ) ].level : 0.0;
+}
+
 int AudioInput::Pull( double hostSeconds, double dt, const float* bins, int binCount, Channel channel, FftLaw law, std::vector< float >& out )
 {
-	if( static_cast< int >( law ) != appliedLaw )
+	engine->mutations().hostCentreOnly = hostCentreOnly;
+	//The law and the host's rate in one configure: earshot applies a configure
+	//at the next update(), and a second one before it replaces the first.
+	if( static_cast< int >( law ) != appliedLaw || hostDirty )
 	{
-		earshot::Config c      = engine->config();
+		earshot::Config c      = makeConfig();
 		const bool power       = law == FftLaw::LinearPower || law == FftLaw::LogPower;
 		const bool logarithmic = law == FftLaw::LogMagnitude || law == FftLaw::LogPower;
 		c.hostBins.value       = power ? earshot::HostBins::Value::Power : earshot::HostBins::Value::Magnitude;
 		c.hostBins.layout      = logarithmic ? earshot::HostBins::Layout::Log : earshot::HostBins::Layout::Linear;
+		if( hostRate != 0 )
+			c.hostBins.sampleRate = static_cast< double >( hostRate );
 		engine->configure( c );
 		appliedLaw = static_cast< int >( law );
+		hostDirty  = false;
 	}
 
 	const earshot::Frame& f = engine->update( hostSeconds, bins, binCount );

@@ -62,7 +62,9 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
     modes against on one, against the derived dip).
   - **End to end** (the plugin, `feed()`): `--crossover` (5 Hz, Gas 30 Pa, Volume stepped:
     each flame against g(a) at its hole's swing; a\* = 4.33 ± 5%), `--rates` (24/30/60/240
-    fps bit-identical; what Volume means), `--fallback` (Resolume's FFT only).
+    fps bit-identical; what Volume means), `--fallback` (Resolume's FFT only), `--arenafft`
+    (Resolume's FFT as Arena 7.29.0 sends it, at 48 and 44.1 kHz: the 40-160 Hz band's share
+    of bin 0, the kicks of a drum loop, the host's rate; not `--host-fft`, the render option).
   - **Picture**: `--spacing` (the flames' period off the rendered frame at modes 3, 10, 14
     against c/(2f√(1 − f_H²/f²))), `--refraction` (the optical path against the columns'
     integral; the displacement against Distance × ∇P; where the Over reads its clip),
@@ -71,7 +73,7 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
     (499 million ms), `--state` (the host's GL state given back).
   - **Audio**: `--device` (the menu, states, lamp and slide-in on a scripted backend).
   - **Plumbing, no GL**: `--names`, `--cues`.
-- The checks can fail: `./build/rutest --negative` (13 wrong models), `tools/mutate.sh`
+- The checks can fail: `./build/rutest --negative` (15 wrong models), `tools/mutate.sh`
   (25 mutants, arm64, 320x180, perl alarm at 300 s; its own build tree, never a shared one).
 - No dead controls: `python3 tools/sweep.py --build build` (`--bare` drops the contexts).
 - Render cost: `./build/rutest --bench` (720p, 1080p, 4K, 160 holes, the duct alone).
@@ -103,7 +105,7 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
   constructor nothing references.
 - The macOS build must be universal. Check with `lipo`, never the build log.
 - `external/earshot/` is a snapshot of earshot (`github.com/stoatworks-labs/earshot`) at
-  `8124191`, unpatched (`SNAPSHOT`). Never edit it here; change earshot upstream and take a new
+  `02306da`, unpatched (`SNAPSHOT`). Never edit it here; change earshot upstream and take a new
   snapshot. Its own CLAUDE.md and AGENTS.md are earshot's as of that commit, status lines and all.
 - **Generated, never edited here:** `source/StoatworksAbout.h` (stoatworks-backend's
   `sync-about.py`, from the website's projects.json), `ATTRIBUTIONS.md` (`sync-attributions.py`,

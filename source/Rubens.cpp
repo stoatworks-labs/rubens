@@ -252,6 +252,11 @@ void RubensPlugin::UpdateTube( double dt )
 	}
 	const Channel channel = static_cast< Channel >( OptionIndex( params[ PT_CHANNEL ], static_cast< int >( Channel::Count ) ) );
 	const FftLaw law      = static_cast< FftLaw >( OptionIndex( params[ PT_FFT_LAW ], static_cast< int >( FftLaw::Count ) ) );
+	//Resolume's 64 bins are linear to half the host's audio engine rate, 375 Hz
+	//each at 48 kHz, and earshot shares each among the bands it overlaps
+	//(earshot 0.1.1). Until the host sends a rate, earshot's 48 kHz.
+	if( !ignoreHostRate )
+		audio.SetHostRate( hostRate.load( std::memory_order_relaxed ) );
 	audio.Pull( now, dt, bins, binCount, channel, law, tap );
 
 	//Volume: the SPL a full-scale sine makes as a travelling wave in the gas,
@@ -505,6 +510,12 @@ FFResult RubensPlugin::SetTime( double time )
 {
 	hostTime = time;
 	return FF_SUCCESS;
+}
+
+void RubensPlugin::SetSampleRate( unsigned int rate )
+{
+	CFFGLPlugin::SetSampleRate( rate );
+	hostRate.store( rate, std::memory_order_relaxed );
 }
 
 char* RubensPlugin::GetTextParameter( unsigned int index )

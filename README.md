@@ -15,7 +15,7 @@
 > 246.59 m/s to **0.15%** at modes 10 and 14 (air's sound speed is 27% off). Fed a slow sine
 > through earshot, the flames dip to **0.838** of their quiet height and cross it again at a
 > swing of **4.43** times the gas overpressure, against **4.33** from the √Δp model. The same
-> audio at 24, 30, 60 and 240 fps gives **bit-identical** flames. **13** deliberately wrong
+> audio at 24, 30, 60 and 240 fps gives **bit-identical** flames. **15** deliberately wrong
 > models and **25** one-character mutants of the shipped code are all caught. What the flames
 > and the hot air above them look like is **chosen**, not measured, and no source gives a
 > working tube's gas pressure or sound level: see [Status](#status).
@@ -122,7 +122,7 @@ schlieren sees it.
 ## Where the audio comes from
 
 From an audio input, through [earshot](https://github.com/stoatworks-labs/earshot), the fleet's
-live-audio front end ([a snapshot](external/earshot/SNAPSHOT) of commit `8124191`, unmodified). Its 16 kHz waveform tap is the
+live-audio front end ([a snapshot](external/earshot/SNAPSHOT) of commit `02306da`, unmodified). Its 16 kHz waveform tap is the
 loudspeaker's velocity, every sample once: the tube picks its own resonances out of whatever
 is played, chords and noise included. Pitch is not used.
 
@@ -143,10 +143,21 @@ is much less.** The FFT gives four band levels a frame and no waveform, so ruben
 piston with band-limited noise in each band (40–160, 160–640, 640–2560 and 2560–8000 Hz)
 whose level follows the band. The tube still picks its resonances out of the noise, and the
 loud bands still dip or flare the flames; but **the melody is gone** (which notes, so which
-modes), **so are the transients inside a frame**, **the level is not calibrated** (nobody has
-measured what Resolume's bins hold; **FFT Law** chooses how to read them), and **it steps once
-a frame**, so unlike the audio-input path it depends on the frame rate. The fallback also
-drives while a chosen input is opening, missing or failed.
+modes), **so are the transients inside a frame**, **the level is not calibrated**, and **it
+steps once a frame**, so unlike the audio-input path it depends on the frame rate. The
+fallback also drives while a chosen input is opening, missing or failed.
+
+**What Resolume's FFT holds was measured**, in Arena 7.29.0 on a Mac: 64 bins, linear, 375 Hz
+each from 0 to 24 kHz (half Arena's 48 kHz audio engine rate, whatever the clip's own rate),
+magnitudes, a new spectrum about every 43 ms. That is **FFT Law**'s default, **Linear Mag**.
+The other three are for hosts nobody has measured: the Log settings read the bins as spread
+logarithmically, which Arena's aren't, so in Arena every band then reads the wrong bins. rubens
+takes the engine's rate from Resolume and shares each bin among the bands it overlaps, so the
+40–160 Hz band gets 0.32 of the lowest bin and the 160–640 Hz band the rest of it and most of
+the next: everything from 0 to 375 Hz, a kick and a bass line alike, drives those two. **In
+v0.1.0 the 40–160 Hz band got nothing**: its earshot read the bins as spread to 22.05 kHz and
+gave each bin whole to the band holding its centre, so the lowest bin (centred at 172 Hz) went
+to 160–640 Hz, the lowest band's noise never sounded, and the kicks drove 160–640 Hz instead.
 
 The status lamp, a small LED on the speaker housing (slid in from the edge when the housing
 is off the frame): **green** an input is delivering; **amber** Resolume's FFT (the usual state
@@ -171,7 +182,7 @@ alpha is 1.
 | Audio | Audio Input | the device menu: None (host FFT), System default, each input by name | None (host FFT) |
 | | Rescan Inputs | event | |
 | | Channel | L+R, Left, Right | L+R |
-| | FFT Law | how the host's bins are read: Linear Mag, Linear Power, Log Mag, Log Power | Linear Mag |
+| | FFT Law | how the host's bins are read: Linear Mag (Arena's, measured), Linear Power, Log Mag, Log Power | Linear Mag |
 | | Volume | 80–150 dB re 20 µPa: the level a full-scale sine makes in the gas | 145 dB |
 | Tube | Length | 0.5–3 m | 1.524 m |
 | | Hole Pitch | 1–5 cm (at most 160 holes) | 2.2 cm |
@@ -284,6 +295,16 @@ throughout.
 - **The device menu**, on earshot's scripted backend: by name, a reorder survived, Missing
   never swapped for the default, Silent, Rescan, a 300 ms open costing the render thread at
   most 6 ms a frame.
+- **Resolume's FFT as Arena sends it** (`--arenafft`, new in v0.1.1): audio made into the 64
+  bins Arena 7.29.0 was measured to send (a 2048-point Hann FFT every 2048 samples, 16 fine
+  bins to a bin, held between updates) and written into the plugin's FFT buffer, with
+  Resolume's sample rate handed over as Arena hands it. A 70 Hz tone, all in the lowest bin,
+  drives the 40–160 Hz noise at its share of that bin, √(120/375) of it at 48 kHz and
+  √(120/344.5) at 44.1 kHz, and the 160–640 Hz noise at the rest, each within 1e-4. A 128 BPM
+  drum loop's kicks drive the 40–160 Hz noise up 10 times in 10 at both rates, to at least 13
+  times its level the frame before, at most 62.5 ms (48 kHz) and 68.8 ms (44.1 kHz) after the
+  kick; its claps and hats alone leave it under 0.3% of that. Built against v0.1.0's earshot
+  the same check fails: 0 of 10, the lowest band never driven.
 - **Cost** (this Mac's GPU, shared with other builds; GL_TIME_ELAPSED medians over three
   verify runs on 2026-11-16): the source **0.57–0.59 ms at 1080p (3.4–3.6% of a 60 fps
   frame)**, 2.28 ms at 4K, 0.72–1.39 ms at 720p; the Over 0.59–0.61, 2.37–2.39 and 0.48–0.80
@@ -356,10 +377,12 @@ user guide's "Flashing, and keeping it safe" has the table.
 - Not modelled: the jets' nonlinear resistance feeding back into the duct, temperature along
   the tube, the loudspeaker's own impedance, holes over part of the tube, air drawn in changing
   the gas, flames going out.
-- **Resolume's FFT is unmeasured:** the fallback's level depends on FFT Law, and its bands can
-  read above full scale (they are clipped). In Arena 7.29.0 on a Mac one of Arena's demo drum
-  loops, at its own level, moved the flames at the defaults (above); nothing louder, and no full
-  mix, has been played to it there.
+- **Resolume's FFT was measured only in Arena 7.29.0 on a Mac** (linear, 375 Hz bins,
+  magnitudes): not on Windows, in Avenue or in another version. The fallback's level is
+  uncalibrated, and its bands can read above full scale (they are clipped). On the FFT a kick
+  and a bass line both land in the lowest bin, 0–375 Hz, so they drive the same two bands.
+  Arena's demo drum loop, at its own level, moved the flames at the defaults (above); nothing
+  louder, and no full mix, has been played to it there.
 - **Audio inputs, from earshot's behaviour as this snapshot has it:** with no input chosen the
   lamp is amber, which is normal; a device that has gone stays missing (blinking red) until it
   is back or another is chosen; and an open input that delivers exact zeros for 3 s turns the

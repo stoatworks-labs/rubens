@@ -29,7 +29,7 @@ flame you see is its own hole's fuel flow, sample by sample.
 *One frame of SW Rubens on its defaults, from the offline harness, not captured from Resolume:
 the harness's own music, 5.5 s in.*
 
-> **Before you rely on this:** it's at **v0.1.0**, the first release, and early days. What's
+> **Before you rely on this:** it's at **v0.1.1**, and early days. What's
 > established is established offline, on an Apple Silicon Mac (macOS 26), by a harness that
 > drives the plugins' own classes in a headless GL context, at two rasters and partly on Apple's
 > software renderer, and feeds them audio through the same path a device would use. The pipe's
@@ -38,7 +38,7 @@ the harness's own music, 5.5 s in.*
 > tubes to 4.4%. The flames' spacing, read off the rendered picture, matches the theory with
 > propane's sound speed to 0.15%. Fed a slow tone, the flames dip to 0.838 of their quiet height
 > and cross it again at a swing 4.43 times the gas pressure, where the model says 4.33. The same
-> audio at 24, 30, 60 and 240 fps gives bit-identical flames. Thirteen models that are wrong on
+> audio at 24, 30, 60 and 240 fps gives bit-identical flames. Fifteen models that are wrong on
 > purpose and twenty-five one-character changes to the shipped code are all caught.
 > In Resolume it has run only briefly: in Arena 7.27.1 on Windows on software rendering, where
 > the fleet's Arena gate passed 15 of 15 (4 skipped: that machine has no sound device, so the
@@ -241,9 +241,8 @@ that is much less.** Resolume gives a plugin four band levels a frame and no wav
 drives the loudspeaker with noise in each band (40–160, 160–640, 640–2560 and 2560–8000 Hz)
 whose level follows the band. The tube still picks its resonances out of the noise, and the loud
 bands still dip or flare the flames; but **the melody is gone** (which notes, so which modes),
-**so are the transients inside a frame**, **the level is not calibrated** (nobody has measured
-what Resolume's bands hold; **FFT Law** chooses how to read them), and **it steps once a frame**,
-so unlike an audio input it depends on the frame rate. It also drives while a chosen input is
+**so are the transients inside a frame**, **the level is not calibrated**, and **it steps once a
+frame**, so unlike an audio input it depends on the frame rate. It also drives while a chosen input is
 opening, missing or failed. This is the normal state with no input chosen, and the lamp shows
 amber for it. In Arena 7.29.0 on a Mac, with Arena's demo drum loop `Beat 001.wav` playing on the
 layer below at the defaults, the Over's flames dropped from their quiet 115 px to a median of
@@ -280,7 +279,7 @@ frame):
 | **Audio Input** | None (host FFT), System default, each input by name | None (host FFT) | Where the sound comes from (above). Spare slots read "(none)". |
 | **Rescan Inputs** | a button | | Lists the inputs plugged in now. |
 | **Channel** | L+R, Left, Right | L+R | Which channel of the input drives the loudspeaker. |
-| **FFT Law** | Linear Mag, Linear Power, Log Mag, Log Power | Linear Mag | How Resolume's bands are read, with no input chosen. Nobody knows which is right; it changes the level. |
+| **FFT Law** | Linear Mag, Linear Power, Log Mag, Log Power | Linear Mag | How Resolume's sound analysis is read, with no input chosen. Linear Mag is what Arena 7.29.0 sends (measured): keep it. The Log settings read Arena's bands wrongly; the other settings are for hosts nobody has measured. |
 | **Volume** | 80–150 dB | 145 dB | The sound level a full-scale sine would make in the pipe (dB re 20 µPa, RMS). A gain on whatever arrives. The slider is linear; its middle is 115 dB. |
 
 ---
@@ -439,9 +438,10 @@ Windows  %LOCALAPPDATA%\rubens\logs\rubens.YYYY-MM-DD.log
   on to the first one it can (5.8 kHz); stopping early is conservative and may change.
 - **No pitch-driven plunger.** Some tubes are tuned by an adjustable end. That would be a second
   mechanism, not this one, and isn't here.
-- **Resolume's sound analysis is unmeasured.** With no input chosen, the level depends on FFT Law
-  and nobody has measured what Resolume's bands hold. The bands can also read above full scale;
-  Rubens clips them. In Arena 7.29.0 on a Mac one of Resolume's demo drum
+- **Resolume's sound analysis was measured only in Arena 7.29.0 on a Mac**, not on Windows, in
+  Avenue or in another version. Its lowest band runs from 0 to 375 Hz, so a kick and a bass line
+  drive the tube's two lowest bands alike. The level isn't calibrated, and the bands can read
+  above full scale; Rubens clips them. In Arena 7.29.0 on a Mac one of Resolume's demo drum
   loops, at its own level, moved the flames at the defaults; nothing louder, and no full mix,
   has been played to it there.
 - **Looks, not measurements:** the flames' shape and colour, the plumes' growth and the shimmer.

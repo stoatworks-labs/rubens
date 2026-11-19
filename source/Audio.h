@@ -32,8 +32,17 @@ class CaptureBackend;
     sine the band's level describes, ramped across the frame from the band's
     last level to this one. The tube still picks its own resonances out of it.
     Lost: the melody (which notes, so which modes), the waveform and transients
-    inside a frame, calibration (FFT Law is the assumption, exposed) and
+    inside a frame, calibration (FFT Law says how the bins are read) and
     frame-rate independence.
+
+    Arena's 64 bins are linear to half the host's audio engine rate, 375 Hz
+    each at 48 kHz (measured; FFT Law's default, Linear Mag, is that law), and
+    earshot shares each bin among the bands it overlaps (from earshot 0.1.1):
+    the 40-160 Hz band is 0.32 of bin 0, the 160-640 Hz band 0.57 of bin 0 and
+    0.71 of bin 1. earshot 8124191 put bin j at (j + 0.5)/64 of 22.05 kHz and
+    gave it whole to the band holding that centre, so bin 0 (172 Hz) went to
+    160-640 Hz and the 40-160 Hz band got nothing. The host's rate comes from
+    FFGL SetSampleRate (`SetHostRate`).
 
     **Pitch is not used**: the tap carries strictly more (SPEC-rubens.md).
 
@@ -76,6 +85,10 @@ public:
 	/// The Audio Input value the host stored; acts only when it changes.
 	void Select( float value );
 
+	/// The host's audio engine rate (FFGL SetSampleRate), the axis of its FFT
+	/// bins. Applied when it changes; 0, or a rate no engine runs at, keeps
+	/// what earshot has (48 kHz, the measured rate, until a host says).
+	void SetHostRate( unsigned int rate );
 	/// This frame's piston signal (full scale = 1) at tube::kTapRate into
 	/// `out`. `hostSeconds` is the host clock, `dt` this frame's step of it
 	/// (the fallback's sample count).
@@ -97,6 +110,14 @@ public:
 	}
 	bool fallbackFromTap = false;///< negative: the fallback reads the (empty) tap
 	bool menuByIndex     = false;///< negative: element values are positions
+	/// negative: each host bin whole to the band holding its centre (earshot
+	/// 8124191's rule), through earshot's own mutation.
+	bool hostCentreOnly = false;
+	/// The rate earshot reads the host's bins at.
+	double HostRateForTest() const;
+	/// What the fallback's noise in band b was last driven at (its RMS is
+	/// this level's sine's): the band's earshot level, clamped to [0, 1].
+	double FallbackLevelForTest( int b ) const;
 
 private:
 	std::unique_ptr< earshot::Engine > engine;
@@ -105,6 +126,8 @@ private:
 	float applied       = 0.0f;
 	bool feeding        = false;
 	int appliedLaw      = -1;
+	unsigned int hostRate = 0;///< the host's rate (SetHostRate), 0 none: earshot's 48 kHz
+	bool hostDirty        = false;///< hostRate not yet handed to earshot
 	bool lastFromDevice = false;
 
 	//The fallback's noise: per band a biquad's state and its RMS correction.

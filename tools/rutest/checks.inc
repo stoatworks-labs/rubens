@@ -10,6 +10,8 @@ bool startRig( Rig& rig, int w, int h, const Perturb& perturb, const Floats* pic
 	rig.plugin.SetHooksForTest( perturb.hooks );
 	rig.plugin.SetDuctHooksForTest( perturb.ductHooks );
 	rig.plugin.AudioForTest().fallbackFromTap = perturb.fallbackFromTap;
+	rig.plugin.AudioForTest().hostCentreOnly  = perturb.hostCentreOnly;
+	rig.plugin.SetIgnoreHostRateForTest( perturb.ignoreHostRate );
 	return true;
 }
 
@@ -934,6 +936,271 @@ int runFallback( const Perturb& perturb )
 }
 
 //===========================================================================
+// --arenafft (GL): the fallback on Resolume's own FFT, as Arena 7.29.0 sends it
+// (earshot's AGENTS.md, "Resolume's 64 bins, measured"). Audio is made into
+// the 64 bins Arena was measured to make and handed to the plugin as its
+// FF_USAGE_FFT buffer, element by element, as a host does; nothing goes
+// through feed(), and SetSampleRate is called as Arena calls it. Under earshot
+// 8124191 (bin j centred at (j + 0.5)/64 of 22.05 kHz, each bin whole to the
+// band holding its centre) the 40-160 Hz band got no bin and its noise was
+// never driven.
+//===========================================================================
+
+/// Arena's FFT buffer as measured: every 2048 samples of the engine's rate, a
+/// 2048-point Hann-windowed DFT of the newest 2048 samples (the mono sum; the
+/// signals here are the same on both sides), and bin k the sum of |X_i| / 2N
+/// over the 16 fine bins 16k .. 16k + 15: linear, fs / 128 a bin (375 Hz at
+/// 48 kHz) to fs / 2, a magnitude, a sine of amplitude A reading about A / 4 in
+/// its bin. Held between updates, as Arena holds it. (snowglobe's sgtest
+/// builds its bins the same way.)
+struct HostSpectrum
+{
+	static constexpr int kN = 2048;
+	int rate;
+	std::function< double( double ) > signal;
+	std::vector< float > bins = std::vector< float >( 64, 0.0f );
+	int64_t updated           = -1;
+
+	HostSpectrum( int r, std::function< double( double ) > s ) : rate( r ), signal( std::move( s ) ) {}
+
+	const std::vector< float >& at( double t )
+	{
+		const int64_t u = static_cast< int64_t >( std::floor( t * rate / kN + 1e-9 ) );
+		if( u == updated )
+			return bins;
+		updated = u;
+		std::vector< std::complex< double > > x( kN );
+		for( int n = 0; n < kN; ++n )
+		{
+			const int64_t sample = u * kN - kN + n;
+			const double hann    = 0.5 - 0.5 * std::cos( 2.0 * kPi * n / kN );
+			x[ static_cast< size_t >( n ) ] = hann * signal( static_cast< double >( sample ) / rate );
+		}
+		//Radix-2, in place.
+		for( int i = 1, j = 0; i < kN; ++i )
+		{
+			int bit = kN >> 1;
+			for( ; j & bit; bit >>= 1 )
+				j ^= bit;
+			j ^= bit;
+			if( i < j )
+				std::swap( x[ static_cast< size_t >( i ) ], x[ static_cast< size_t >( j ) ] );
+		}
+		for( int len = 2; len <= kN; len <<= 1 )
+		{
+			const std::complex< double > w = std::polar( 1.0, -2.0 * kPi / len );
+			for( int i = 0; i < kN; i += len )
+			{
+				std::complex< double > wk( 1.0, 0.0 );
+				for( int k = 0; k < len / 2; ++k )
+				{
+					const auto a = x[ static_cast< size_t >( i + k ) ], b = x[ static_cast< size_t >( i + k + len / 2 ) ] * wk;
+					x[ static_cast< size_t >( i + k ) ]           = a + b;
+					x[ static_cast< size_t >( i + k + len / 2 ) ] = a - b;
+					wk *= w;
+				}
+			}
+		}
+		for( int k = 0; k < 64; ++k )
+		{
+			double sum = 0.0;
+			for( int i = 16 * k; i < 16 * k + 16; ++i )
+				sum += std::abs( x[ static_cast< size_t >( i ) ] );
+			bins[ static_cast< size_t >( k ) ] = static_cast< float >( sum / ( 2.0 * kN ) );
+		}
+		return bins;
+	}
+};
+
+/// 128 BPM (Arena's Beat 001), so the kicks fall at every phase of the
+/// 2048-sample updates. The parts: the harness's kick (150 -> 50 Hz) on every
+/// beat; a clap on two and four and hats on the eighths between, as noise
+/// twice differenced (-52 dB at 375 Hz), so they put next to nothing in bin 0.
+constexpr double kLoopBeat = 60.0 / 128.0;
+enum LoopPart : int
+{
+	kLoopKick = 1,
+	kLoopTop  = 2///< claps and hats
+};
+
+double drumLoopAt( double t, int parts, int rate )
+{
+	if( t < 0.0 )
+		return 0.0;
+	//The sample's own index, rounded: truncating t * rate repeats and skips
+	//samples, and a differenced noise that does is no longer high-passed.
+	const uint32_t n  = static_cast< uint32_t >( std::llround( t * rate ) );
+	const double beat = std::fmod( t, kLoopBeat );
+	double s          = 0.0;
+	if( parts & kLoopKick )
+		s += 0.6 * kickAt( beat );
+	if( parts & kLoopTop )
+	{
+		auto hiss = [ n ]( uint32_t seed ) { return hash01( n, seed ) - 2.0 * hash01( n - 1u, seed ) + hash01( n - 2u, seed ); };
+		const double clap = std::fmod( t, 2.0 * kLoopBeat ) - kLoopBeat;
+		if( clap >= 0.0 )
+			s += 0.3 * std::exp( -clap / 0.03 ) * hiss( 11u );
+		const double hat = std::fmod( t + kLoopBeat / 2.0, kLoopBeat );
+		s += 0.2 * std::exp( -hat / 0.01 ) * hiss( 7u );
+	}
+	return s;
+}
+
+int runArenaFft( const Perturb& perturb )
+{
+	std::printf( "\n=== arenafft: the fallback on Resolume's FFT alone (the bins as Arena 7.29.0 sends them, nothing fed), at 48 and 44.1 kHz: "
+	             "a tone in bin 0 drives the 40-160 Hz noise band at its share of the bin, 120 Hz of fs/128; a drum loop's kicks drive it "
+	             "every time, within two of the host's updates and a frame; claps and hats above bin 0 leave it quiet; earshot reads the "
+	             "bins at the host's rate under FFT Law's default, Linear Mag, the measured law\n" );
+	const Raster raster = kRasters.back();
+	auto start          = [ & ]( Rig& rig, int rate ) {
+		if( !startRig( rig, raster.w, raster.h, perturb ) )
+			return false;
+		tubeDefaults( rig );
+		rig.plugin.SetSampleRate( static_cast< unsigned int >( rate ) );
+		return true;
+	};
+	auto feedHost = [ & ]( Rig& rig, HostSpectrum& host ) {
+		rig.beforeFrame = [ &rig, &host ]( int f ) {
+			const std::vector< float >& b = host.at( rig.Seconds( f ) );
+			rig.Bins( [ &b ]( int bin ) { return static_cast< double >( b[ static_cast< size_t >( bin ) ] ); } );
+		};
+	};
+
+	for( int rate : { 48000, 44100 } )
+	{
+		//(a) A 70 Hz tone: all of it in bin 0, which spans 0 to fs/128. The
+		//40-160 Hz band takes 120/(fs/128) of the bin's energy, 160-640 Hz the
+		//rest; the noise of each is driven at that level.
+		{
+			Rig rig;
+			if( !start( rig, rate ) )
+				return 1;
+			HostSpectrum host( rate, []( double t ) { return 0.4 * std::sin( 2.0 * kPi * 70.0 * t ); } );
+			feedHost( rig, host );
+			if( !rig.Render( 90 ) )
+				return 1;
+			AudioInput& audio = rig.plugin.AudioForTest();
+			const double width      = rate / 128.0;
+			const double m0 = host.bins[ 0 ], m1 = host.bins[ 1 ];
+			const double want0 = std::sqrt( 120.0 / width ) * m0, want1 = std::sqrt( ( width - 160.0 ) / width ) * m0;
+			const double l0 = audio.FallbackLevelForTest( 0 ), l1 = audio.FallbackLevelForTest( 1 );
+			const double l2 = audio.FallbackLevelForTest( 2 ), l3 = audio.FallbackLevelForTest( 3 );
+			Check( std::fabs( l0 / want0 - 1.0 ) < 1e-4 && std::fabs( l1 / want1 - 1.0 ) < 1e-4 && l2 < 1e-3 * m0 && l3 < 1e-3 * m0 && m1 < 1e-3 * m0,
+			       fmt( "a 70 Hz tone, %d Hz: bin 0 %.5f (bin 1 %.2e); the 40-160 Hz noise driven at %.5f, want sqrt(120/%.2f) x bin 0 = %.5f; "
+			            "160-640 Hz at %.5f, want sqrt(%.2f/%.2f) x bin 0 = %.5f (each within 1e-4); 640-2560 and 2560-8000 Hz %.1e and %.1e "
+			            "(want under 1e-3 of bin 0)",
+			            rate, m0, m1, l0, width, want0, l1, width - 160.0, width, want1, l2, l3 ) );
+			const double read = audio.HostRateForTest();
+			Check( std::fabs( read - rate ) < 1e-9, fmt( "the host says %d Hz: earshot reads its bins at %.0f Hz", rate, read ) );
+			if( rate == 48000 )
+			{
+				const earshot::HostBins law = audio.Engine().config().hostBins;
+				const earshot::HostBins measured;
+				Check( rig.plugin.GetById( PT_FFT_LAW ) == 0.0f && law.value == earshot::HostBins::Value::Magnitude && law.layout == earshot::HostBins::Layout::Linear
+				           && measured.value == law.value && measured.layout == law.layout,
+				       fmt( "FFT Law at its default (Linear Mag): earshot reads %s, %s, earshot's measured default",
+				            law.value == earshot::HostBins::Value::Magnitude ? "magnitudes" : "powers",
+				            law.layout == earshot::HostBins::Layout::Linear ? "linear" : "log" ) );
+			}
+		}
+
+		//(b) The drum loop: every kick drives the 40-160 Hz noise up from where
+		//it stood just before the kick, by the second update after it and the
+		//next frame at the latest.
+		const double late = 2.0 * HostSpectrum::kN / rate + 1.0 / 60.0 + 1e-6;
+		double loopPeak   = 0.0;
+		{
+			Rig rig;
+			if( !start( rig, rate ) )
+				return 1;
+			HostSpectrum host( rate, [ rate ]( double t ) { return drumLoopAt( t, kLoopKick | kLoopTop, rate ); } );
+			feedHost( rig, host );
+			std::vector< double > level, moved;
+			for( int f = 0; f < 360; ++f )
+			{
+				if( !rig.Render( 1 ) )
+					return 1;
+				level.push_back( rig.plugin.AudioForTest().FallbackLevelForTest( 0 ) );
+				const FrameData& fd = rig.plugin.LastFrame();
+				double sum          = 0.0;
+				for( float l : fd.lengths )
+					sum += std::fabs( l / fd.flame - 1.0 );
+				moved.push_back( fd.lengths.empty() ? 0.0 : sum / fd.lengths.size() );
+			}
+			int kicks = 0, driven = 0;
+			double worstRatio = 1e30, worstLag = 0.0, moving = 0.0;
+			for( int k = 0; k * kLoopBeat < 6.0; ++k )
+			{
+				const double at = k * kLoopBeat;
+				if( at < 1.0 || at + late > 6.0 - 1.0 / 60.0 )
+					continue;//the first second primes earshot's floors
+				++kicks;
+				const int before = static_cast< int >( std::floor( at * 60.0 - 1e-9 ) );//the last frame before the kick
+				double peak = 0.0, lag = 0.0;
+				for( int f = before + 1; f < static_cast< int >( level.size() ) && f / 60.0 <= at + late; ++f )
+					if( level[ static_cast< size_t >( f ) ] > peak )
+					{
+						peak = level[ static_cast< size_t >( f ) ];
+						lag  = f / 60.0 - at;
+					}
+				const double was   = level[ static_cast< size_t >( before ) ];
+				const double ratio = peak / std::max( was, 1e-30 );
+				if( peak > 1e-3 && ratio > 4.0 )
+				{
+					++driven;
+					worstLag = std::max( worstLag, lag );
+				}
+				worstRatio = std::min( worstRatio, ratio );
+				loopPeak   = std::max( loopPeak, peak );
+			}
+			for( size_t f = 60; f < moved.size(); ++f )
+				moving = std::max( moving, moved[ f ] );
+			Check( kicks > 0 && driven == kicks,
+			       fmt( "the drum loop, %d Hz, 1..6 s: %d of %d kicks drive the 40-160 Hz noise up (peak over 1e-3 and over 4x its level the frame "
+			            "before the kick; the least %.1fx), the latest peak %.1f ms after its kick (limit %.1f); loudest %.4f",
+			            rate, driven, kicks, worstRatio, worstLag * 1e3, late * 1e3, loopPeak ) );
+			Check( moving > 0.03, fmt( "the drum loop, %d Hz: the flames move (mean |flame/quiet - 1| up to %.3f, want over 0.03)", rate, moving ) );
+		}
+
+		//(c) Claps and hats alone: next to nothing in bin 0, so the 40-160 Hz
+		//noise stays quiet while the bands above it move.
+		{
+			Rig rig;
+			if( !start( rig, rate ) )
+				return 1;
+			HostSpectrum host( rate, [ rate ]( double t ) { return drumLoopAt( t, kLoopTop, rate ); } );
+			feedHost( rig, host );
+			if( !rig.Render( 60 ) )
+				return 1;
+			double low = 0.0, top = 0.0;
+			for( int f = 60; f < 360; ++f )
+			{
+				if( !rig.Render( 1 ) )
+					return 1;
+				low = std::max( low, rig.plugin.AudioForTest().FallbackLevelForTest( 0 ) );
+				top = std::max( top, rig.plugin.AudioForTest().FallbackLevelForTest( 3 ) );
+			}
+			Check( loopPeak > 0.0 && low < 0.05 * loopPeak && top > 10.0 * low,
+			       fmt( "claps and hats alone, %d Hz, 1..6 s: the 40-160 Hz noise at most %.2e (want under 5%% of the kicks' %.4f); 2560-8000 Hz up to %.4f",
+			            rate, low, loopPeak, top ) );
+		}
+	}
+
+	//A rate no engine runs at is not one: earshot keeps its 48 kHz.
+	{
+		Rig rig;
+		if( !start( rig, 0 ) )
+			return 1;
+		if( !rig.Render( 2 ) )
+			return 1;
+		const double read = rig.plugin.AudioForTest().HostRateForTest();
+		Check( std::fabs( read - 48000.0 ) < 1e-9, fmt( "a host rate of 0: earshot keeps %.0f Hz (want 48000)", read ) );
+	}
+	return Verdict();
+}
+
+//===========================================================================
 // --device (GL): the menu, the states and the lamp, on a scripted backend.
 //===========================================================================
 bool lampIs( const double c[ 3 ], double r, double g, double b )
@@ -1658,7 +1925,8 @@ const std::vector< CheckEntry >& checks()
 {
 	static const std::vector< CheckEntry > list = {
 		{ "resonance", runResonance, true }, { "orifice", runOrifice, true },   { "offres", runOffres, true },         { "crossover", runCrossover, false },
-		{ "spacing", runSpacing, false },    { "rates", runRates, false },         { "fallback", runFallback, false },    { "device", runDevice, false },
+		{ "spacing", runSpacing, false },    { "rates", runRates, false },         { "fallback", runFallback, false },    { "arenafft", runArenaFft, false },
+		{ "device", runDevice, false },
 		{ "alpha", runAlpha, false },        { "refraction", runRefraction, false }, { "clock", runClock, false },     { "resize", runResize, false },
 		{ "state", runState, false },        { "names", runNames, true },       { "cues", runCues, true },
 	};
@@ -1698,6 +1966,9 @@ int runNegative( bool offlineOnly = false )
 	add( "spacing", runSpacing, "the duct's modes without the holes' shunt", []( Perturb& p ) { p.ductHooks = kDuctNoHoleShift; } );
 	add( "rates", runRates, "the flames follow their fuel once a frame, not once a sample", []( Perturb& p ) { p.ductHooks = kDuctPerFrame; } );
 	add( "fallback", runFallback, "the fallback reads the (empty) tap", []( Perturb& p ) { p.fallbackFromTap = true; } );
+	add( "arenafft", runArenaFft, "Resolume's bins filed whole under the band holding each one's centre (earshot 8124191's rule): the 40-160 Hz band gets none",
+	     []( Perturb& p ) { p.hostCentreOnly = true; } );
+	add( "arenafft", runArenaFft, "the host's sample rate never reaches earshot", []( Perturb& p ) { p.ignoreHostRate = true; } );
 	add( "device", runDevice, "menu values are positions, not keys", []( Perturb& p ) { p.menuByIndex = true; } );
 	add( "alpha", runAlpha, "the Over's alpha forced to 1", []( Perturb& p ) { p.hooks = kHookAlphaOne; } );
 	add( "refraction", runRefraction, "the deflection's sign flipped", []( Perturb& p ) { p.hooks = kHookFlipDeflection; } );
