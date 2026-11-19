@@ -47,14 +47,14 @@ the Grid backdrop, 5.5 s into the harness's track (`--frames 330`).</sub>
 
 ## Download
 
-**[v0.1.0](https://github.com/stoatworks-labs/rubens/releases/tag/v0.1.0)** — prebuilt for macOS and Windows. Pick your platform:
+**[v0.1.1](https://github.com/stoatworks-labs/rubens/releases/tag/v0.1.1)** — prebuilt for macOS and Windows. Pick your platform:
 
 <details>
 <summary><b>macOS</b> — Universal (Apple Silicon + Intel)</summary>
 
 | Build | Download | Size |
 | --- | --- | --- |
-| Universal (Apple Silicon + Intel) · .dmg disk image | [`rubens-0.1.0-macos-universal.dmg`](https://github.com/stoatworks-labs/rubens/releases/download/v0.1.0/rubens-0.1.0-macos-universal.dmg) | 1.2 MB |
+| Universal (Apple Silicon + Intel) · .dmg disk image | [`rubens-0.1.1-macos-universal.dmg`](https://github.com/stoatworks-labs/rubens/releases/download/v0.1.1/rubens-0.1.1-macos-universal.dmg) | 1.2 MB |
 | Universal (Apple Silicon + Intel) · .zip archive | [`rubens-macos-universal.zip`](https://github.com/stoatworks-labs/rubens/releases/latest/download/rubens-macos-universal.zip) | 1.1 MB |
 
 </details>
@@ -64,8 +64,8 @@ the Grid backdrop, 5.5 s into the harness's track (`--frames 330`).</sub>
 
 | Build | Download | Size |
 | --- | --- | --- |
-| x64 · .exe installer | [`rubens-0.1.0-windows-x86_64-setup.exe`](https://github.com/stoatworks-labs/rubens/releases/download/v0.1.0/rubens-0.1.0-windows-x86_64-setup.exe) | 370 KB |
-| x64 · .zip archive | [`rubens-windows-x86_64.zip`](https://github.com/stoatworks-labs/rubens/releases/latest/download/rubens-windows-x86_64.zip) | 488 KB |
+| x64 · .exe installer | [`rubens-0.1.1-windows-x86_64-setup.exe`](https://github.com/stoatworks-labs/rubens/releases/download/v0.1.1/rubens-0.1.1-windows-x86_64-setup.exe) | 377 KB |
+| x64 · .zip archive | [`rubens-windows-x86_64.zip`](https://github.com/stoatworks-labs/rubens/releases/latest/download/rubens-windows-x86_64.zip) | 490 KB |
 
 </details>
 
@@ -260,9 +260,16 @@ before. **The heights match v0.1.0's** within the snapshots' scatter, as they sh
 changes which noise bands the kick drives (now 40–160 and 160–640 Hz, before 160–640 Hz alone),
 not how much it drives them. `Bass 001.wav` still left both at their quiet height: besides being
 quiet, almost all its sound sits above 160 Hz (under 160 Hz it is 19 dB below its 160–640 Hz).
+Then with **the v0.1.1 release's own bundles** (Developer ID-signed and notarised, from its zip):
+the Over at 115.5 px with nothing playing, 101.5 px (as low as 60 px) at the defaults, 116 px
+cleared; the source at 142 px, 134.5 px (as low as 115 px). At 150 dB the medians scatter from
+run to run, with the flames out over part of the tube: the Over's 60 px here against 81.5 px
+before, the source's 128.5 px against 123.5 px. Arena's window list showed no prompt, and the
+compositions and preferences were as before.
 
 **On Windows**, in Arena 7.27.1 on win-lab (software rendering, Mesa llvmpipe, no GPU and no
-sound device), the fleet's Arena gate passed 15 of 15 with 4 skipped twice: with the release's
+sound device), the fleet's Arena gate passed 15 of 15 with 4 skipped, with v0.1.1's own x64
+DLLs from its zip (19 November 2026), and twice for v0.1.0: with the release's
 own x64 DLLs, from the v0.1.0 zip, and before that with a pre-tag build of the release workflow
 (whose DLLs differ in hash, as every build's do). Both load and register (`SW Rubens`, RU01, a source; `SW
 Rubens Over`, RU02, an effect), list in Arena's source and effect browsers with all 22 and 23

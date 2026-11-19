@@ -246,7 +246,8 @@ frame**, so unlike an audio input it depends on the frame rate. It also drives w
 opening, missing or failed. This is the normal state with no input chosen, and the lamp shows
 amber for it. In Arena 7.29.0 on a Mac, with Arena's demo drum loop `Beat 001.wav` playing on the
 layer below at the defaults, the Over's flames dropped from their quiet 115 px to a median of
-103 px, as low as 60 px; at Volume 150 dB to a median of 82 px.
+about 102 px, as low as 60 px; at Volume 150 dB further, to a median between 60 and 82 px from
+one run to the next.
 
 **What Resolume sends was measured**, in Arena 7.29.0 on a Mac: 64 bins, linear, 375 Hz each
 from 0 to 24 kHz (half Arena's 48 kHz audio engine rate, whatever the clip's own), magnitudes,
@@ -255,8 +256,7 @@ Rubens takes the engine's rate from Resolume and shares each bin among the bands
 the 40–160 Hz band gets a third of the lowest bin (0–375 Hz) and the 160–640 Hz band the rest of
 it: a kick and a bass line drive those two alike. **Before v0.1.1 the 40–160 Hz band got nothing
 from Resolume** and the kicks drove 160–640 Hz alone. The flames dip as far either way (v0.1.0
-gave 101 px, as low as 61 px, and 82 px at 150 dB): what changed is which noise bands the kick
-plays into the tube.
+gave 101 px, as low as 61 px): what changed is which noise bands the kick plays into the tube.
 
 **Resolume's Audio setting.** Resolume adds its own **Audio** control to both plugins, as to
 anything that reads its sound analysis, with three choices. **Composition** (the default) hears

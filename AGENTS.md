@@ -38,7 +38,10 @@ universal build: both log "host audio at 48000 Hz"; Over 115 px at rest, 103 (mi
 defaults, 81.5 at 150 dB, cleared 116; source 142, 134 (min 122), 123.5. Same as v0.1.0 within
 scatter, as expected (the fix moves the kick into 40-160 Hz, it doesn't add level; flame height
 can't tell the bands apart). `Bass 001.wav` still moves nothing: -37 dBFS RMS mono, and under
-160 Hz 19 dB below its own 160-640 Hz, so it's no bass test.
+160 Hz 19 dB below its own 160-640 Hz, so it's no bass test. The release's own notarised
+bundles: Over 115.5 / 101.5 (min 60) / cleared 116, source 142 / 134.5 (min 115); at 150 dB
+the Over's median scatters run to run (60 here, 81.5 pre-tag). win-lab gate on the v0.1.1 zip's
+DLLs: 15 passed, 0 failed, 4 skipped (a first run's last step hung while the Mac slept; re-run).
 
 ## The idea
 
