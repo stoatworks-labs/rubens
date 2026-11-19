@@ -64,7 +64,8 @@ shaders, the Over's alpha, the fallback (`AudioInput::Pull`), the device menu
     each flame against g(a) at its hole's swing; a\* = 4.33 ± 5%), `--rates` (24/30/60/240
     fps bit-identical; what Volume means), `--fallback` (Resolume's FFT only), `--arenafft`
     (Resolume's FFT as Arena 7.29.0 sends it, at 48 and 44.1 kHz: the 40-160 Hz band's share
-    of bin 0, the kicks of a drum loop, the host's rate; not `--host-fft`, the render option).
+    of bin 0, the kicks of a drum loop, the host's rate, FFT Law and the rate changed in one
+    frame; not `--host-fft`, the render option).
   - **Picture**: `--spacing` (the flames' period off the rendered frame at modes 3, 10, 14
     against c/(2f√(1 − f_H²/f²))), `--refraction` (the optical path against the columns'
     integral; the displacement against Distance × ∇P; where the Over reads its clip),

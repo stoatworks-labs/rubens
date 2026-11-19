@@ -256,7 +256,9 @@ build.
   replaces the first** (`config()` is the applied one, not the pending one). v0.1.1's first cut
   set the host's rate with one configure and FFT Law with another in the same frame, built from
   `config()`: the law's, the later, carried the old rate, and at 44.1 kHz earshot kept 48 kHz.
-  `--arenafft` caught it. Now `Pull` builds one configure from the law and the rate together.
+  `--arenafft` caught it. Now `Pull` builds one configure from the law and the rate together,
+  and `--arenafft` (since after the v0.1.1 tag) also changes both in one frame, then each alone,
+  in both orders; the first cut's wiring fails 3 of those 4.
 - `update()` runs all of earshot's analysis whatever is read; rubens reads only the tap and the
   bands. Its cost is inside the bench's wall time, not measured separately.
 

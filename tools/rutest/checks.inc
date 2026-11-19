@@ -1197,6 +1197,45 @@ int runArenaFft( const Perturb& perturb )
 		const double read = rig.plugin.AudioForTest().HostRateForTest();
 		Check( std::fabs( read - 48000.0 ) < 1e-9, fmt( "a host rate of 0: earshot keeps %.0f Hz (want 48000)", read ) );
 	}
+
+	//FFT Law and the host's rate changed in the same frame, then each alone:
+	//neither may drop the other. earshot applies a configure() at the next
+	//update() and a second one before it replaces the first, so a configure
+	//built from config() (the applied one) loses whichever came first.
+	{
+		Rig rig;
+		if( !start( rig, 48000 ) )
+			return 1;
+		if( !rig.Render( 30 ) )
+			return 1;
+		using L     = earshot::HostBins::Layout;
+		using V     = earshot::HostBins::Value;
+		auto reads  = [ & ]( const char* what, L layout, V value, double rate ) {
+			const earshot::HostBins h = rig.plugin.AudioForTest().Engine().config().hostBins;
+			auto name                 = []( L l, V v ) { return std::string( l == L::Log ? "log " : "linear " ) + ( v == V::Power ? "power" : "magnitude" ); };
+			Check( h.layout == layout && h.value == value && std::fabs( h.sampleRate - rate ) < 1e-9,
+			       fmt( "%s: earshot reads %s at %.0f Hz (want %s at %.0f)", what, name( h.layout, h.value ).c_str(), h.sampleRate,
+			            name( layout, value ).c_str(), rate ) );
+		};
+		rig.Set( PT_FFT_LAW, static_cast< float >( FftLaw::LogMagnitude ) );
+		rig.plugin.SetSampleRate( 44100u );
+		if( !rig.Render( 2 ) )
+			return 1;
+		reads( "FFT Law to Log Mag and the rate to 44.1 kHz in one frame", L::Log, V::Magnitude, 44100.0 );
+		rig.Set( PT_FFT_LAW, static_cast< float >( FftLaw::LinearPower ) );
+		if( !rig.Render( 2 ) )
+			return 1;
+		reads( "then FFT Law alone, to Linear Power", L::Linear, V::Power, 44100.0 );
+		rig.plugin.SetSampleRate( 48000u );
+		if( !rig.Render( 2 ) )
+			return 1;
+		reads( "then the rate alone, to 48 kHz", L::Linear, V::Power, 48000.0 );
+		rig.plugin.SetSampleRate( 96000u );
+		rig.Set( PT_FFT_LAW, static_cast< float >( FftLaw::LogPower ) );
+		if( !rig.Render( 2 ) )
+			return 1;
+		reads( "the rate to 96 kHz and FFT Law to Log Power in one frame", L::Log, V::Power, 96000.0 );
+	}
 	return Verdict();
 }
 

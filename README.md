@@ -315,7 +315,8 @@ throughout.
   drum loop's kicks drive the 40–160 Hz noise up 10 times in 10 at both rates, to at least 13
   times its level the frame before, at most 62.5 ms (48 kHz) and 68.8 ms (44.1 kHz) after the
   kick; its claps and hats alone leave it under 0.3% of that. Built against v0.1.0's earshot
-  the same check fails: 0 of 10, the lowest band never driven.
+  the same check fails: 0 of 10, the lowest band never driven. FFT Law and the sample rate
+  changed in the same frame both arrive, in either order.
 - **Cost** (this Mac's GPU, shared with other builds; GL_TIME_ELAPSED medians over three
   verify runs on 2026-11-16): the source **0.57–0.59 ms at 1080p (3.4–3.6% of a 60 fps
   frame)**, 2.28 ms at 4K, 0.72–1.39 ms at 720p; the Over 0.59–0.61, 2.37–2.39 and 0.48–0.80
