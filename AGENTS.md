@@ -33,7 +33,12 @@ it overlaps and defaults to that law; rubens overrides `SetSampleRate` and hands
 earshot on the render thread (`AudioInput::SetHostRate`, logged once per change). FFT Law keeps
 its options and its default, Linear Mag, which is the measured law; the Log options stay for
 hosts nobody has measured. `rutest --arenafft` builds Arena's bins from audio and fails 0 of 10
-against `8124191`; two new negative controls (15 in all).
+against `8124191`; two new negative controls (15 in all). Arena 7.29.0 on this Mac, pre-tag
+universal build: both log "host audio at 48000 Hz"; Over 115 px at rest, 103 (min 60) at the
+defaults, 81.5 at 150 dB, cleared 116; source 142, 134 (min 122), 123.5. Same as v0.1.0 within
+scatter, as expected (the fix moves the kick into 40-160 Hz, it doesn't add level; flame height
+can't tell the bands apart). `Bass 001.wav` still moves nothing: -37 dBFS RMS mono, and under
+160 Hz 19 dB below its own 160-640 Hz, so it's no bass test.
 
 ## The idea
 

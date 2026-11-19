@@ -206,7 +206,7 @@ and their music, where 3 Pa and 145 dB make the kicks flare the flames by 70–8
 
 ## Status
 
-**v0.1.0, and early days.** It has run in Resolume only briefly, in Arena on Windows and
+**v0.1.1, and early days.** It has run in Resolume only briefly, in Arena on Windows and
 on a Mac (below), never in a show, and it has never opened a live audio device: every sound it
 has heard was fed to it. `oxbow probe` reads the bundles as a host does (`SW Rubens` / `RU01` /
 source, `SW Rubens Over` / `RU02` / effect) and `oxbow selftest` renders through each. On Windows
@@ -249,6 +249,17 @@ Composition, every clip in the composition; on Local, only the clip the plugin i
 Over's card, or the source's own clip, so nothing, and the flames stayed quiet); on External,
 Arena's own audio input, which heard nothing here either. Arena's clock reached the plugin in
 milliseconds, its log has no error from either plugin, and no microphone prompt appeared.
+
+**v0.1.1**, the same way on 19 November 2026 with a pre-tag build of the release workflow
+(universal, signed ad hoc): both plugins logged "host audio at 48000 Hz", so they read
+Resolume's bins to 24 kHz, 375 Hz each. The Over's flames stood at a median 115 px with nothing
+playing; with `Beat 001.wav` at the defaults they dropped to a median of 103 px, as low as 60 px;
+at 150 dB to 81.5 px (as low as 59 px); cleared, back to 116 px. The source's went from 142 px to
+134 px (as low as 122 px), and at 150 dB to 123.5 px. Local and External stayed quiet, as
+before. **The heights match v0.1.0's** within the snapshots' scatter, as they should: the fix
+changes which noise bands the kick drives (now 40–160 and 160–640 Hz, before 160–640 Hz alone),
+not how much it drives them. `Bass 001.wav` still left both at their quiet height: besides being
+quiet, almost all its sound sits above 160 Hz (under 160 Hz it is 19 dB below its 160–640 Hz).
 
 **On Windows**, in Arena 7.27.1 on win-lab (software rendering, Mesa llvmpipe, no GPU and no
 sound device), the fleet's Arena gate passed 15 of 15 with 4 skipped twice: with the release's
