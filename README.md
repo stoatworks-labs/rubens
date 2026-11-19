@@ -3,8 +3,8 @@
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. It has run in Resolume only briefly,
 > in Arena 7.27.1 on Windows (software rendering, no sound device) and Arena 7.29.0 on a Mac,
-> where Resolume's sound analysis reached it as silence: it has **never moved to music inside
-> Resolume** and **never been in a show**; **it has never opened a live audio device**. Everything else below is established
+> where Resolume's own sound analysis moves the flames with a demo drum loop playing; it has
+> **never been in a show**, and **it has never opened a live audio device**. Everything else below is established
 > by an offline harness, `rutest`, that drives the real plugin class through the same
 > `ProcessOpenGL` a host calls, in a headless GL context on a synthetic clock, on this Mac's GPU
 > at two rasters, and feeds it audio through the same earshot `feed()` path a device would use.
@@ -221,13 +221,23 @@ test clip whose left third is opaque, middle third white at 50% alpha and right 
 transparent, on a blue layer, with Distance at 0 every third above the flames is identical to
 the bare clip, the half-transparent band included, and the tube and flames stand solid over the
 transparent third: Arena's premultiplied input and the Over's premultiplied output agree.
-**It has never moved to music inside Resolume: Resolume's sound analysis never reached it
-there.** With Resolume's `Beat 001.mov` playing on
-the layer below (its picture moving), the flames held their quiet height in every snapshot, at
-Volume 145 and 150 dB and with FFT Law on Linear Mag and Log Mag; woofer's check on the same
-Arena that day saw the same. Why isn't known, and the Mac's audio settings weren't looked at or
-changed. Arena's clock reached the plugin in milliseconds, its log has no error from either
-plugin, and no microphone prompt appeared.
+**Resolume's sound analysis moves the flames.** That first check (18 November) played
+`Beat 001.mov` on the layer below, and the flames held their quiet height, because Arena's demo
+`.mov` clips are picture only: their sound is in the matching `.wav` files. Re-tested on
+19 November 2026 with the v0.1.0 release's own bundles, Audio Input on None (host FFT), the Audio
+buffer on Composition and `Beat 001.wav` playing on the layer below, read off the picture in
+snapshots about a fifth of a second apart: the Over's flames (over an opaque card) stood at a
+median 115 px with nothing playing, flickering only by Shimmer; with the loop playing at the
+default Volume (145 dB) they dropped and went uneven along the tube, to a median of 101 px and
+as low as 61 px, with the flames out over part of it; at 150 dB, the most Volume gives, to a
+median of 82 px and as low as 59 px. The source's flames went from 142 px to a median of 135 px
+(as low as 117 px), and at 150 dB to 123 px. Once the loop was cleared the flames went back to
+their quiet height. Arena's quieter `Bass 001.wav` (−40 dBFS RMS, 18 dB under Beat 001) left them
+at their quiet height even at 150 dB. **Arena's Audio setting decides what they hear:** on
+Composition, every clip in the composition; on Local, only the clip the plugin is on (here the
+Over's card, or the source's own clip, so nothing, and the flames stayed quiet); on External,
+Arena's own audio input, which heard nothing here either. Arena's clock reached the plugin in
+milliseconds, its log has no error from either plugin, and no microphone prompt appeared.
 
 **On Windows**, in Arena 7.27.1 on win-lab (software rendering, Mesa llvmpipe, no GPU and no
 sound device), the fleet's Arena gate passed 15 of 15 with 4 skipped twice: with the release's
@@ -347,9 +357,9 @@ user guide's "Flashing, and keeping it safe" has the table.
   the tube, the loudspeaker's own impedance, holes over part of the tube, air drawn in changing
   the gas, flames going out.
 - **Resolume's FFT is unmeasured:** the fallback's level depends on FFT Law, and its bands can
-  read above full scale (they are clipped). In Arena 7.29.0 on a Mac the analysis reached the
-  plugin as silence with a demo clip playing on the layer below, so the plugins have **never
-  moved to music inside Resolume**.
+  read above full scale (they are clipped). In Arena 7.29.0 on a Mac one of Arena's demo drum
+  loops, at its own level, moved the flames at the defaults (above); nothing louder, and no full
+  mix, has been played to it there.
 - **Audio inputs, from earshot's behaviour as this snapshot has it:** with no input chosen the
   lamp is amber, which is normal; a device that has gone stays missing (blinking red) until it
   is back or another is chosen; and an open input that delivers exact zeros for 3 s turns the

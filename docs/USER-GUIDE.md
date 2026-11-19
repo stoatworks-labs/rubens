@@ -43,9 +43,8 @@ the harness's own music, 5.5 s in.*
 > In Resolume it has run only briefly: in Arena 7.27.1 on Windows on software rendering, where
 > the fleet's Arena gate passed 15 of 15 (4 skipped: that machine has no sound device, so the
 > controls that need sound weren't tried), and in Arena 7.29.0 on a Mac, where both showed every
-> control and kept a half-transparent clip's alpha right, but Resolume's own sound analysis
-> reached them as silence, so they have **never moved to music inside Resolume** (see
-> [Known limits](#known-limits)). It has **never been in a show** and
+> control, kept a half-transparent clip's alpha right, and moved to a demo drum loop on
+> Resolume's own sound analysis (see [Where the sound comes from](#where-the-sound-comes-from)). It has **never been in a show** and
 > **never been driven by a real audio input**: every sound it has heard was fed to it.
 > What the flames and the hot air look like is **chosen**, not measured, and no source gives a
 > working tube's gas pressure or sound level (see [Known limits](#known-limits)). Try it on a
@@ -82,8 +81,9 @@ it trips SmartScreen once: **More info** → **Run anyway**. Or skip the install
 
 1. Put **SW Rubens** in a clip slot and play it. With no audio input chosen it listens to
    Resolume's own sound analysis (see [Where the sound comes from](#where-the-sound-comes-from)),
-   so play some music in the composition and the flames should move. (In Arena 7.29.0 on one
-   Mac that analysis arrived as silence and they didn't: if so, go straight to step 2.)
+   so play some music in the composition and the flames move. (Resolume's demo `.mov` clips
+   have no sound: play the matching `.wav`. Resolume's **Audio** setting picks what Rubens hears;
+   see [Where the sound comes from](#where-the-sound-comes-from).)
 2. For the real thing, pick your input in **Audio Input**: an audio interface, a loopback, the
    system default. The lamp on the speaker housing goes green when sound is arriving. On macOS
    the first time, macOS asks whether *Resolume* may use the microphone; say yes, or the tube
@@ -245,7 +245,18 @@ bands still dip or flare the flames; but **the melody is gone** (which notes, so
 what Resolume's bands hold; **FFT Law** chooses how to read them), and **it steps once a frame**,
 so unlike an audio input it depends on the frame rate. It also drives while a chosen input is
 opening, missing or failed. This is the normal state with no input chosen, and the lamp shows
-amber for it.
+amber for it. In Arena 7.29.0 on a Mac, with Arena's demo drum loop `Beat 001.wav` playing on the
+layer below at the defaults, the Over's flames dropped from their quiet 115 px to a median of
+101 px, as low as 61 px; at Volume 150 dB to a median of 82 px.
+
+**Resolume's Audio setting.** Resolume adds its own **Audio** control to both plugins, as to
+anything that reads its sound analysis, with three choices. **Composition** (the default) hears
+every clip playing in the composition. **Local** hears only the clip Rubens is on: the Over on a
+clip with its own sound track hears that sound, and over a picture-only clip nothing; the source
+hears nothing. **External** hears Resolume's own audio input (Resolume's Preferences, under
+Audio), which in the Mac test heard nothing. A clip only has sound if its file has a sound track:
+Resolume's demo `.mov` clips are picture only, and their sound is in the matching `.wav` files,
+so play the `.wav` on a layer of its own.
 
 ### The status lamp
 
@@ -376,8 +387,10 @@ Nothing was timed inside Resolume or on Windows.
 
 **The flames don't move.** No sound is reaching the tube. Check the lamp: steady red means the
 input is silent (on macOS, the microphone permission; see above); amber means Rubens is on
-Resolume's own sound analysis, which needs music playing in the composition (and in Arena
-7.29.0 on one Mac it arrived as silence even then: choose an audio input). Or Volume is low.
+Resolume's own sound analysis, which needs music playing in the composition: on **Composition** it
+hears every clip, on **Local** only the clip Rubens is on, on **External** only Resolume's audio
+input, and a Resolume demo `.mov` clip has no sound (play its `.wav`). Or Volume is low, or the
+clip is quiet.
 
 **The flames all flare at once, filling the frame.** The music is loud against the gas. Turn
 Volume down or Gas up.
@@ -428,10 +441,9 @@ Windows  %LOCALAPPDATA%\rubens\logs\rubens.YYYY-MM-DD.log
   mechanism, not this one, and isn't here.
 - **Resolume's sound analysis is unmeasured.** With no input chosen, the level depends on FFT Law
   and nobody has measured what Resolume's bands hold. The bands can also read above full scale;
-  Rubens clips them. **In Arena 7.29.0 on a Mac the analysis reached Rubens as silence**, with
-  one of Resolume's demo clips playing on the layer below: the flames stayed at their quiet
-  height, so Rubens has **never moved to music inside Resolume**. Why isn't known. If that
-  happens to you, choose an audio input instead.
+  Rubens clips them. In Arena 7.29.0 on a Mac one of Resolume's demo drum
+  loops, at its own level, moved the flames at the defaults; nothing louder, and no full mix,
+  has been played to it there.
 - **Looks, not measurements:** the flames' shape and colour, the plumes' growth and the shimmer.
   The flames' 50 ms response to their fuel is an assumption.
 - **Not modelled:** the jets feeding back into the pipe's sound, temperature along the tube, the

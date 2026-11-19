@@ -16,8 +16,9 @@ for each plugin, oxbow reading and rendering both bundles with devices disabled.
 only briefly** (2026-11-18): the fleet's Arena gate on win-lab (Arena 7.27.1, llvmpipe, no sound
 device) passed 15 of 15 with 4 skipped, on a pre-tag build and again on the v0.1.0 zip, and Arena 7.29.0 on this Mac, driven over REST in a new
 composition, registered both, showed every control, kept a half-transparent clip's alpha right
-in the Over, and got Resolume's sound analysis as silence with a demo clip playing below, so it has never moved
-to music inside Resolume (README, "In Resolume"). **No live audio device ever opened**, by rubens or by earshot; Audio Input stayed
+in the Over, and, re-tested 2026-11-19 with `Beat 001.wav` below (the first run's `Beat 001.mov` has no audio
+stream), moved both plugins' flames on Resolume's Composition FFT: the Over's median flame 115 px at rest,
+101 px at the defaults, 82 px at 150 dB (README, "In Resolume"). **No live audio device ever opened**, by rubens or by earshot; Audio Input stayed
 on None (host FFT). Windows builds come from CI (MSVC). earshot is a snapshot of `github.com/stoatworks-labs/earshot` at
 `8124191`, unpatched.
 
