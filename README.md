@@ -78,11 +78,11 @@ macOS builds are signed and notarised and open normally. The Windows builds are 
 ## Video
 
 > **Photosensitivity warning:** the video shows flames that flare with the music, and regular
-> patterns: a row of evenly spaced flames, and a fine grid behind them.
+> patterns: a row of evenly spaced flames, and a fine grid behind them. With loud music the plugin
+> can flash at its default settings. Large-area flashes in the video are kept to three a second or
+> fewer.
 
-A video of both plugins, rendered by `rutest` with Resolume's demo stems and some synthesised
-tones as the sound, is scheduled on YouTube for 07:50 London time on 19 November 2026. Its link
-goes here once it is public.
+[![Rubens: Rubens' flame tube, played by your music, for Resolume](docs/video-thumb.png)](https://www.youtube.com/watch?v=ekOCEnXD3-g)
 
 ## The one idea
 
